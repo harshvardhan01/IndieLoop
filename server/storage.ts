@@ -95,6 +95,7 @@ export class MemStorage implements IStorage {
 		const sampleProducts: InsertProduct[] = [
 			{
 				name: "Artisan Wooden Bowl",
+				asin: "B001234567",
 				description:
 					"Hand-carved from sustainable teak wood by skilled artisans in Kerala, India. Each bowl is unique with its own grain pattern and natural beauty.",
 				originalPrice: "3000.00",
@@ -111,6 +112,7 @@ export class MemStorage implements IStorage {
 			},
 			{
 				name: "Peruvian Alpaca Scarf",
+				asin: "B001234566",
 				description:
 					"Soft alpaca wool with traditional patterns, handwoven by Peruvian artisans using ancestral techniques.",
 				originalPrice: "4200.00",
@@ -126,6 +128,7 @@ export class MemStorage implements IStorage {
 			},
 			{
 				name: "Moroccan Ceramic Vase",
+				asin: "B001234565",
 				description:
 					"Traditional blue pottery with intricate details, handcrafted in Fez using centuries-old techniques.",
 				originalPrice: "3600.00",
@@ -141,6 +144,7 @@ export class MemStorage implements IStorage {
 			},
 			{
 				name: "Silver Wire Bracelet",
+				asin: "B001234564",
 				description:
 					"Hand-forged sterling silver with natural stones, crafted by Thai silversmiths.",
 				originalPrice: "5800.00",
@@ -156,6 +160,7 @@ export class MemStorage implements IStorage {
 			},
 			{
 				name: "Guatemalan Leather Bag",
+				asin: "B001234563",
 				description:
 					"Hand-stitched with traditional Mayan patterns, made from premium leather.",
 				originalPrice: "8000.00",
@@ -171,6 +176,7 @@ export class MemStorage implements IStorage {
 			},
 			{
 				name: "Bamboo Storage Basket",
+				asin: "B001234562",
 				description:
 					"Eco-friendly woven bamboo with natural finish, perfect for storage.",
 				originalPrice: "1800.00",
