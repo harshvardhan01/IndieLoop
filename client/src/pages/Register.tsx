@@ -30,7 +30,6 @@ export default function Register() {
 	const form = useForm<RegisterData>({
 		resolver: zodResolver(registerSchema),
 		defaultValues: {
-			username: "",
 			email: "",
 			password: "",
 			firstName: "",
@@ -139,25 +138,6 @@ export default function Register() {
 
 								<FormField
 									control={form.control}
-									name="username"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Username *</FormLabel>
-											<FormControl>
-												<Input
-													{...field}
-													type="text"
-													placeholder="Choose a username"
-													className="focus:ring-craft-brown focus:border-craft-brown"
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-
-								<FormField
-									control={form.control}
 									name="email"
 									render={({ field }) => (
 										<FormItem>
@@ -222,8 +202,8 @@ export default function Register() {
 
 						<div className="mt-6 text-xs text-gray-500 text-center">
 							By creating an account, you agree to support
-							artisans and discover authentic handcrafted products
-							from around the world.
+							independent artisans and discover authentic
+							handcrafted products from around the world.
 						</div>
 					</CardContent>
 				</Card>

@@ -17,7 +17,6 @@ import { randomUUID } from "crypto";
 export interface IStorage {
 	// User operations
 	getUser(id: string): Promise<User | undefined>;
-	getUserByUsername(username: string): Promise<User | undefined>;
 	getUserByEmail(email: string): Promise<User | undefined>;
 	createUser(user: InsertUser): Promise<User>;
 
@@ -142,7 +141,7 @@ export class MemStorage implements IStorage {
 				material: "Leather",
 				countryOfOrigin: "Guatemala",
 				images: [
-					"https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=600",
+					"https://images.unsplash.com/photo-1553062407098eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=600",
 				],
 				dimensions: '12" x 10" x 4"',
 				weight: "600g",
@@ -175,12 +174,6 @@ export class MemStorage implements IStorage {
 		return this.users.get(id);
 	}
 
-	async getUserByUsername(username: string): Promise<User | undefined> {
-		return Array.from(this.users.values()).find(
-			(user) => user.username === username
-		);
-	}
-
 	async getUserByEmail(email: string): Promise<User | undefined> {
 		return Array.from(this.users.values()).find(
 			(user) => user.email === email
@@ -192,8 +185,6 @@ export class MemStorage implements IStorage {
 		const user: User = {
 			...insertUser,
 			id,
-			firstName: insertUser.firstName || null,
-			lastName: insertUser.lastName || null,
 			createdAt: new Date(),
 		};
 		this.users.set(id, user);
@@ -240,7 +231,6 @@ export class MemStorage implements IStorage {
 		return this.products.get(id);
 	}
 
-	// New optimized searchProducts method
 	async searchProducts(
 		query: string,
 		limit: number = 100

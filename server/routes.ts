@@ -12,7 +12,10 @@ import {
 import { sendEmail } from "./config/email";
 
 // Simple session management
-const sessions = new Map<string, { userId: string; username: string }>();
+const sessions = new Map<
+	string,
+	{ userId: string; email: string; firstName: string; lastName: string }
+>();
 
 function generateSessionId(): string {
 	return Math.random().toString(36).substring(7) + Date.now().toString(36);
@@ -36,18 +39,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 		try {
 			const userData = registerSchema.parse(req.body);
 
-			console.log("Registering user:", userData);
-
 			// Check if user already exists
-			const existingUser = await storage.getUserByUsername(
-				userData.username
-			);
-			if (existingUser) {
-				return res
-					.status(400)
-					.json({ message: "Username already exists" });
-			}
-
 			const existingEmail = await storage.getUserByEmail(userData.email);
 			if (existingEmail) {
 				return res
@@ -59,14 +51,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 			const sessionId = generateSessionId();
 			sessions.set(sessionId, {
 				userId: user.id,
-				username: user.username,
+				email: user.email,
+				firstName: user.firstName,
+				lastName: user.lastName,
 			});
 
 			res.json({
 				user: {
 					id: user.id,
-					username: user.username,
 					email: user.email,
+					firstName: user.firstName,
+					lastName: user.lastName,
 				},
 				sessionId,
 			});
@@ -82,9 +77,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 	app.post("/api/auth/login", async (req, res) => {
 		try {
-			const { username, password } = loginSchema.parse(req.body);
+			const { email, password } = loginSchema.parse(req.body);
 
-			const user = await storage.getUserByUsername(username);
+			const user = await storage.getUserByEmail(email);
 			if (!user || user.password !== password) {
 				return res.status(400).json({ message: "Invalid credentials" });
 			}
@@ -92,14 +87,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 			const sessionId = generateSessionId();
 			sessions.set(sessionId, {
 				userId: user.id,
-				username: user.username,
+				email: user.email,
+				firstName: user.firstName,
+				lastName: user.lastName,
 			});
 
 			res.json({
 				user: {
 					id: user.id,
-					username: user.username,
 					email: user.email,
+					firstName: user.firstName,
+					lastName: user.lastName,
 				},
 				sessionId,
 			});
@@ -129,8 +127,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 			}
 			res.json({
 				id: user.id,
-				username: user.username,
 				email: user.email,
+				firstName: user.firstName,
+				lastName: user.lastName,
 			});
 		} catch (error) {
 			res.status(500).json({ message: "Failed to get user info" });
@@ -181,6 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 			}
 			res.json(product);
 		} catch (error) {
+			console.error("Error fetching product:", error);
 			res.status(500).json({ message: "Failed to fetch product" });
 		}
 	});
