@@ -1,0 +1,39 @@
+Create an ecommerce application- IndieLoop
+🔍 Breakdown of “IndieLoop”
+Indie
+Short for independent — often used to describe independent creators, makers, or small brands. It aligns with your mission to support local artisans and independent producers.
+
+Loop
+Suggests connection, continuity, and inclusion — you're creating a loop between artisans and customers. It can also subtly hint at a circular, sustainable economy.
+
+- My company sources the finished products from local artisans and sell them online.
+
+- The app should let customers browse products and add them to the cart and finally place an order.
+
+- Each product has multiple images so have a slide show kind of thing on the product, name, description, original price and discounted price.
+
+- Product has has the main raw material ex- wood, ceramic, woolen textile, silk textile, iron etc, country of origin, reviews
+
+- The product should be displayed as stack or give an option to view products as cards (3/4 images in a row).
+
+- Clicking on a product should display its complete information
+
+- Create files for login/signup using multiple sources like username/password, gmail, meta etc. Use strategy pattern. But for now, keep this in memory
+
+- Customer should be able to see their past orders and also tracking information.
+
+- On the page, give them an option to filter the products by country and by material.
+
+- choose handicrafted types of color and also create a file to change the colors.
+
+- Use React from frontend and Node for backend.
+
+- All the data should be stored in Postgress and MongoDB. So, create API specific files. For now, instead of calling DB actually, store things in memory on backend.
+
+- Frontend should be able to call the backend.
+
+- Create the applicaiton which I can use to run end to end on local
+
+- For any customer support, create a form which takes email/name/phone/message and send it to jasapa7424@cotasen.com (create a file for this configuration).
+
+- add support for selecting currencies from USD, EUR, INR and AED. INR should be the first currency.
