@@ -698,13 +698,23 @@ export default function Admin() {
 								<CardContent>
 									<div className="flex justify-between items-center mb-4">
 										<div>
-											<span className="text-lg font-bold">
-												₹{product.originalPrice}
-											</span>
-											{product.discountedPrice && (
-												<span className="text-sm text-gray-500 line-through ml-2">
-													₹{product.discountedPrice}
+											{!product.discountedPrice && (
+												<span className="text-lg font-bold">
+													₹{product.originalPrice}
 												</span>
+											)}
+											{product.discountedPrice && (
+												<>
+													<span className="text-lg font-bold">
+														₹
+														{
+															product.discountedPrice
+														}
+													</span>
+													<span className="text-sm text-gray-500 line-through ml-2">
+														₹{product.originalPrice}
+													</span>
+												</>
 											)}
 										</div>
 									</div>
