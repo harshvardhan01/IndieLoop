@@ -8,13 +8,20 @@ import {
 	insertCartItemSchema,
 	insertOrderSchema,
 	insertSupportMessageSchema,
+	insertProductSchema,
 } from "@shared/schema";
 import { sendEmail } from "./config/email";
 
 // Simple session management
 const sessions = new Map<
 	string,
-	{ userId: string; email: string; firstName: string; lastName: string }
+	{
+		userId: string;
+		email: string;
+		firstName: string;
+		lastName: string;
+		isAdmin: boolean;
+	}
 >();
 
 function generateSessionId(): string {
@@ -27,6 +34,22 @@ function requireAuth(req: any, res: any, next: any) {
 
 	if (!session) {
 		return res.status(401).json({ message: "Unauthorized" });
+	}
+
+	req.user = session;
+	next();
+}
+
+function requireAdmin(req: any, res: any, next: any) {
+	const sessionId = req.headers.authorization?.replace("Bearer ", "");
+	const session = sessionId ? sessions.get(sessionId) : null;
+
+	if (!session) {
+		return res.status(401).json({ message: "Unauthorized" });
+	}
+
+	if (!session.isAdmin) {
+		return res.status(403).json({ message: "Admin access required" });
 	}
 
 	req.user = session;
@@ -54,6 +77,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 				email: user.email,
 				firstName: user.firstName,
 				lastName: user.lastName,
+				isAdmin: user.isAdmin || false,
 			});
 
 			res.json({
@@ -62,6 +86,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 					email: user.email,
 					firstName: user.firstName,
 					lastName: user.lastName,
+					isAdmin: user.isAdmin || false,
 				},
 				sessionId,
 			});
@@ -90,6 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 				email: user.email,
 				firstName: user.firstName,
 				lastName: user.lastName,
+				isAdmin: user.isAdmin || false,
 			});
 
 			res.json({
@@ -98,6 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 					email: user.email,
 					firstName: user.firstName,
 					lastName: user.lastName,
+					isAdmin: user.isAdmin || false,
 				},
 				sessionId,
 			});
@@ -130,6 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 				email: user.email,
 				firstName: user.firstName,
 				lastName: user.lastName,
+				isAdmin: user.isAdmin || false,
 			});
 		} catch (error) {
 			res.status(500).json({ message: "Failed to get user info" });
@@ -330,6 +358,147 @@ ${messageData.message}
 			res.status(500).json({ message: "Failed to send support message" });
 		}
 	});
+
+	// Config routes
+	app.get("/api/config/countries", async (req, res) => {
+		try {
+			const { COUNTRIES } = await import("./config/constants");
+			res.json(COUNTRIES);
+		} catch (error) {
+			res.status(500).json({ message: "Failed to fetch countries" });
+		}
+	});
+
+	app.get("/api/config/materials", async (req, res) => {
+		try {
+			const { MATERIALS } = await import("./config/constants");
+			res.json(MATERIALS);
+		} catch (error) {
+			res.status(500).json({ message: "Failed to fetch materials" });
+		}
+	});
+
+	// Admin routes - Product management
+	app.post("/api/admin/products", requireAdmin, async (req: any, res) => {
+		try {
+			const productData = insertProductSchema.parse(req.body);
+			const product = await storage.createProduct(productData);
+			res.json(product);
+		} catch (error) {
+			if (error instanceof z.ZodError) {
+				return res
+					.status(400)
+					.json({ message: error.errors[0].message });
+			}
+			res.status(500).json({ message: "Failed to create product" });
+		}
+	});
+
+	app.put("/api/admin/products/:id", requireAdmin, async (req: any, res) => {
+		try {
+			const productData = insertProductSchema.parse(req.body);
+			const product = await storage.updateProduct(
+				req.params.id,
+				productData
+			);
+			if (!product) {
+				return res.status(404).json({ message: "Product not found" });
+			}
+			res.json(product);
+		} catch (error) {
+			if (error instanceof z.ZodError) {
+				return res
+					.status(400)
+					.json({ message: error.errors[0].message });
+			}
+			res.status(500).json({ message: "Failed to update product" });
+		}
+	});
+
+	app.delete(
+		"/api/admin/products/:id",
+		requireAdmin,
+		async (req: any, res) => {
+			try {
+				const success = await storage.deleteProduct(req.params.id);
+				if (!success) {
+					return res
+						.status(404)
+						.json({ message: "Product not found" });
+				}
+				res.json({ message: "Product deleted successfully" });
+			} catch (error) {
+				res.status(500).json({ message: "Failed to delete product" });
+			}
+		}
+	);
+
+	app.get("/api/admin/orders", requireAdmin, async (req: any, res) => {
+		try {
+			const orders = await storage.getAllOrders();
+			res.json(orders);
+		} catch (error) {
+			res.status(500).json({ message: "Failed to fetch orders" });
+		}
+	});
+
+	app.put(
+		"/api/admin/orders/:id/status",
+		requireAdmin,
+		async (req: any, res) => {
+			try {
+				const { status, trackingNumber } = req.body;
+				const order = await storage.updateOrderStatus(
+					req.params.id,
+					status,
+					trackingNumber
+				);
+				if (!order) {
+					return res.status(404).json({ message: "Order not found" });
+				}
+				res.json(order);
+			} catch (error) {
+				res.status(500).json({
+					message: "Failed to update order status",
+				});
+			}
+		}
+	);
+
+	app.get("/api/admin/support", requireAdmin, async (req: any, res) => {
+		try {
+			const messages = await storage.getAllSupportMessages();
+			res.json(messages);
+		} catch (error) {
+			res.status(500).json({
+				message: "Failed to fetch support messages",
+			});
+		}
+	});
+
+	app.put(
+		"/api/admin/support/:id/status",
+		requireAdmin,
+		async (req: any, res) => {
+			try {
+				const { status } = req.body;
+				const message = await storage.updateSupportMessageStatus(
+					req.params.id,
+					status
+				);
+				if (!message) {
+					return res
+						.status(404)
+						.json({ message: "Support message not found" });
+				}
+				res.json(message);
+			} catch (error) {
+				res.status(500).json({
+					message: "Failed to update support message status",
+				});
+			}
+		}
+	);
 
 	// Currency conversion rates (mock data)
 	app.get("/api/currency-rates", async (req, res) => {

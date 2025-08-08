@@ -20,6 +20,7 @@ export const users = pgTable("users", {
 	password: text("password").notNull(),
 	firstName: text("first_name").notNull(),
 	lastName: text("last_name").notNull(),
+	isAdmin: boolean("is_admin").default(false),
 	createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -27,6 +28,7 @@ export const products = pgTable("products", {
 	id: varchar("id")
 		.primaryKey()
 		.default(sql`gen_random_uuid()`),
+	asin: varchar("asin", { length: 10 }).notNull().unique(),
 	name: text("name").notNull(),
 	description: text("description").notNull(),
 	originalPrice: decimal("original_price", {
@@ -141,6 +143,7 @@ export const registerSchema = z.object({
 	password: z.string().min(6, "Password must be at least 6 characters"),
 	firstName: z.string().min(1, "First name is required"),
 	lastName: z.string().min(1, "Last name is required"),
+	isAdmin: z.boolean().default(false),
 });
 
 export type LoginData = z.infer<typeof loginSchema>;

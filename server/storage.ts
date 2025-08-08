@@ -29,6 +29,11 @@ export interface IStorage {
 	getProduct(id: string): Promise<Product | undefined>;
 	searchProducts(query: string, limit?: number): Promise<Product[]>;
 	createProduct(product: InsertProduct): Promise<Product>;
+	updateProduct(
+		id: string,
+		productData: InsertProduct
+	): Promise<Product | null>;
+	deleteProduct(id: string): Promise<boolean>;
 
 	// Review operations
 	getProductReviews(productId: string): Promise<Review[]>;
@@ -42,6 +47,7 @@ export interface IStorage {
 		status: string,
 		trackingNumber?: string
 	): Promise<Order | undefined>;
+	getAllOrders(): Promise<Order[]>;
 
 	// Cart operations
 	getUserCart(userId: string): Promise<CartItem[]>;
@@ -50,10 +56,26 @@ export interface IStorage {
 	removeFromCart(id: string): Promise<boolean>;
 	clearCart(userId: string): Promise<boolean>;
 
+	// Product management operations
+	createProduct(product: InsertProduct): Promise<Product>;
+	updateProduct(
+		id: string,
+		product: InsertProduct
+	): Promise<Product | undefined>;
+	deleteProduct(id: string): Promise<boolean>;
+
+	// Order management operations
+	getAllOrders(): Promise<Order[]>;
+
 	// Support operations
 	createSupportMessage(
 		message: InsertSupportMessage
 	): Promise<SupportMessage>;
+	getAllSupportMessages(): Promise<SupportMessage[]>;
+	updateSupportMessageStatus(
+		id: string,
+		status: string
+	): Promise<SupportMessage | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -169,6 +191,11 @@ export class MemStorage implements IStorage {
 		});
 	}
 
+	// Helper to generate ASIN
+	private generateASIN(): string {
+		return `ASIN${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+	}
+
 	// User operations
 	async getUser(id: string): Promise<User | undefined> {
 		return this.users.get(id);
@@ -215,13 +242,17 @@ export class MemStorage implements IStorage {
 		}
 
 		if (filters?.search) {
-			const searchTerm = filters.search.toLowerCase();
-			products = products.filter(
-				(p) =>
-					p.name.toLowerCase().includes(searchTerm) ||
-					p.description.toLowerCase().includes(searchTerm) ||
-					p.material.toLowerCase().includes(searchTerm)
-			);
+			const searchTerms = filters.search
+				.toLowerCase()
+				.trim()
+				.split(/\s+/);
+			products = products.filter((p) => {
+				const searchableText =
+					`${p.name} ${p.description} ${p.material} ${p.countryOfOrigin}`.toLowerCase();
+				return searchTerms.every((term) =>
+					searchableText.includes(term)
+				);
+			});
 		}
 
 		return products;
@@ -231,25 +262,13 @@ export class MemStorage implements IStorage {
 		return this.products.get(id);
 	}
 
-	async searchProducts(
-		query: string,
-		limit: number = 100
-	): Promise<Product[]> {
-		const searchTerm = query.toLowerCase();
-		const matchingProducts = Array.from(this.products.values()).filter(
-			(p) =>
-				p.name.toLowerCase().includes(searchTerm) ||
-				p.description.toLowerCase().includes(searchTerm) ||
-				p.material.toLowerCase().includes(searchTerm)
-		);
-		return matchingProducts.slice(0, limit);
-	}
-
 	async createProduct(insertProduct: InsertProduct): Promise<Product> {
 		const id = randomUUID();
+		const asin = insertProduct.asin || this.generateASIN();
 		const product: Product = {
 			...insertProduct,
 			id,
+			asin,
 			discountedPrice: insertProduct.discountedPrice || null,
 			dimensions: insertProduct.dimensions || null,
 			weight: insertProduct.weight || null,
@@ -259,6 +278,52 @@ export class MemStorage implements IStorage {
 		this.products.set(id, product);
 		return product;
 	}
+
+	async updateProduct(
+		id: string,
+		insertProduct: InsertProduct
+	): Promise<Product | undefined> {
+		const existingProduct = this.products.get(id);
+		if (!existingProduct) {
+			return undefined;
+		}
+
+		const updatedProduct: Product = {
+			...existingProduct,
+			...insertProduct,
+			id,
+			discountedPrice: insertProduct.discountedPrice || null,
+			dimensions: insertProduct.dimensions || null,
+			weight: insertProduct.weight || null,
+			inStock: insertProduct.inStock ?? true,
+		};
+		this.products.set(id, updatedProduct);
+		return updatedProduct;
+	}
+
+	async deleteProduct(id: string): Promise<boolean> {
+		return this.products.delete(id);
+	}
+
+	async searchProducts(
+		query: string,
+		limit: number = 100
+	): Promise<Product[]> {
+		const searchTerms = query.toLowerCase().trim().split(/\s+/);
+		const matchingProducts = Array.from(this.products.values()).filter(
+			(p) => {
+				const searchableText =
+					`${p.name} ${p.description} ${p.material} ${p.countryOfOrigin}`.toLowerCase();
+				return searchTerms.every((term) =>
+					searchableText.includes(term)
+				);
+			}
+		);
+		return matchingProducts.slice(0, limit);
+	}
+
+	// The second createProduct method was a duplicate and is now consolidated
+	// The updateProduct method also had a duplicate, which is now consolidated.
 
 	// Review operations
 	async getProductReviews(productId: string): Promise<Review[]> {
@@ -316,6 +381,12 @@ export class MemStorage implements IStorage {
 			return updatedOrder;
 		}
 		return undefined;
+	}
+
+	async getAllOrders(): Promise<Order[]> {
+		return Array.from(this.orders.values()).sort(
+			(a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+		);
 	}
 
 	// Cart operations
@@ -388,12 +459,31 @@ export class MemStorage implements IStorage {
 		const message: SupportMessage = {
 			...insertMessage,
 			id,
-			status: insertMessage.status || "open",
 			phone: insertMessage.phone || null,
+			status: insertMessage.status || "open",
 			createdAt: new Date(),
 		};
 		this.supportMessages.set(id, message);
 		return message;
+	}
+
+	async getAllSupportMessages(): Promise<SupportMessage[]> {
+		return Array.from(this.supportMessages.values()).sort(
+			(a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+		);
+	}
+
+	async updateSupportMessageStatus(
+		id: string,
+		status: string
+	): Promise<SupportMessage | undefined> {
+		const message = this.supportMessages.get(id);
+		if (message) {
+			const updatedMessage = { ...message, status };
+			this.supportMessages.set(id, updatedMessage);
+			return updatedMessage;
+		}
+		return undefined;
 	}
 }
 

@@ -57,7 +57,9 @@ export default function Header() {
 	const handleSearch = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (searchQuery.trim()) {
-			setLocation(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+			setLocation(
+				`/collections?search=${encodeURIComponent(searchQuery.trim())}`
+			);
 			setShowSuggestions(false);
 		}
 	};
@@ -80,7 +82,7 @@ export default function Header() {
 	const handleCategorySearch = (term: string) => {
 		setSearchQuery(term);
 		setShowSuggestions(false);
-		setLocation(`/?search=${encodeURIComponent(term)}`);
+		setLocation(`/collections?search=${encodeURIComponent(term)}`);
 	};
 
 	const handleLogout = () => {
@@ -146,22 +148,13 @@ export default function Header() {
 														product
 													)
 												}
-												className="flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0">
-												<img
-													src={product.images[0]}
-													alt={product.name}
-													className="w-10 h-10 object-cover rounded mr-3"
-												/>
-												<div className="flex-1">
-													<div className="font-medium text-gray-900">
-														{product.name}
-													</div>
-													<div className="text-sm text-gray-500">
-														{product.material} •{" "}
-														{
-															product.countryOfOrigin
-														}
-													</div>
+												className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0">
+												<div className="font-medium text-gray-900">
+													{product.name}
+												</div>
+												<div className="text-sm text-gray-500">
+													{product.material} •{" "}
+													{product.countryOfOrigin}
 												</div>
 											</div>
 										))}
@@ -206,11 +199,22 @@ export default function Header() {
 									<span className="text-sm text-gray-700">
 										Hello, {user?.firstName}
 									</span>
-									<Link href="/orders">
-										<Button variant="ghost" size="sm">
-											Orders
-										</Button>
-									</Link>
+									<Button asChild variant="ghost" size="sm">
+										<Link to="/orders">Orders</Link>
+									</Button>
+									{user?.isAdmin && (
+										<Link href="/admin">
+											<Button
+												variant={
+													location === "/admin"
+														? "default"
+														: "ghost"
+												}
+												size="sm">
+												Admin
+											</Button>
+										</Link>
+									)}
 									<Button
 										onClick={handleLogout}
 										variant="ghost"
@@ -281,20 +285,13 @@ export default function Header() {
 											onClick={() =>
 												handleSuggestionClick(product)
 											}
-											className="flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0">
-											<img
-												src={product.images[0]}
-												alt={product.name}
-												className="w-8 h-8 object-cover rounded mr-3"
-											/>
-											<div className="flex-1">
-												<div className="font-medium text-gray-900 text-sm">
-													{product.name}
-												</div>
-												<div className="text-xs text-gray-500">
-													{product.material} •{" "}
-													{product.countryOfOrigin}
-												</div>
+											className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0">
+											<div className="font-medium text-gray-900 text-sm">
+												{product.name}
+											</div>
+											<div className="text-xs text-gray-500">
+												{product.material} •{" "}
+												{product.countryOfOrigin}
 											</div>
 										</div>
 									))}
@@ -327,6 +324,19 @@ export default function Header() {
 												Orders
 											</Button>
 										</Link>
+										{user?.isAdmin && (
+											<Link href="/admin">
+												<Button
+													variant={
+														location === "/admin"
+															? "default"
+															: "ghost"
+													}
+													className="justify-start w-full">
+													Admin
+												</Button>
+											</Link>
+										)}
 										<Button
 											onClick={handleLogout}
 											variant="ghost"

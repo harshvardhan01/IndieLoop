@@ -153,10 +153,17 @@ export default function ProductDetail() {
 									</div>
 									<div>
 										<span className="text-gray-600">
+											ASIN:
+										</span>
+										<span className="ml-2 font-medium">
+											{product.asin}
+										</span>
+									</div>
+									<div>
+										<span className="text-gray-600">
 											Country of Origin:
 										</span>
-										<span className="ml-2 font-medium flex items-center">
-											<MapPin className="w-3 h-3 mr-1" />
+										<span className="ml-2 font-medium">
 											{product.countryOfOrigin}
 										</span>
 									</div>

@@ -16,51 +16,51 @@ import Contact from "@/pages/Contact";
 import Collections from "@/pages/Collections";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
+import Admin from "@/pages/Admin";
 import Header from "@/components/Header";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+	const { isAuthenticated, isLoading } = useAuth();
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-craft-brown"></div>
-      </div>
-    );
-  }
+	if (isLoading) {
+		return (
+			<div className="min-h-screen flex items-center justify-center">
+				<div className="animate-spin rounded-full h-32 w-32 border-b-2 border-craft-brown"></div>
+			</div>
+		);
+	}
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/collections" component={Collections} />
-        <Route path="/about" component={About} />
-        <Route path="/contact" component={Contact} />
-        <Route path="/privacy" component={Privacy} />
-        <Route path="/terms" component={Terms} />
-        <Route path="/product/:id" component={ProductDetail} />
-        <Route path="/cart" component={Cart} />
-        <Route path="/login" component={Login} />
-        <Route path="/register" component={Register} />
-        {isAuthenticated && (
-          <Route path="/orders" component={Orders} />
-        )}
-        <Route component={NotFound} />
-      </Switch>
-    </div>
-  );
+	return (
+		<div className="min-h-screen bg-gray-50">
+			<Header />
+			<Switch>
+				<Route path="/" component={Home} />
+				<Route path="/collections" component={Collections} />
+				<Route path="/about" component={About} />
+				<Route path="/contact" component={Contact} />
+				<Route path="/privacy" component={Privacy} />
+				<Route path="/terms" component={Terms} />
+				<Route path="/product/:id" component={ProductDetail} />
+				<Route path="/cart" component={Cart} />
+				<Route path="/login" component={Login} />
+				<Route path="/register" component={Register} />
+				{isAuthenticated && <Route path="/orders" component={Orders} />}
+				{isAuthenticated && <Route path="/admin" component={Admin} />}
+				<Route component={NotFound} />
+			</Switch>
+		</div>
+	);
 }
 
 function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
+	return (
+		<QueryClientProvider client={queryClient}>
+			<TooltipProvider>
+				<Toaster />
+				<Router />
+			</TooltipProvider>
+		</QueryClientProvider>
+	);
 }
 
 export default App;

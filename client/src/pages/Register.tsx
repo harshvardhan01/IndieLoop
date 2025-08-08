@@ -34,6 +34,7 @@ export default function Register() {
 			password: "",
 			firstName: "",
 			lastName: "",
+			isAdmin: false,
 		},
 	});
 
@@ -172,6 +173,32 @@ export default function Register() {
 												/>
 											</FormControl>
 											<FormMessage />
+										</FormItem>
+									)}
+								/>
+
+								<FormField
+									control={form.control}
+									name="isAdmin"
+									render={({ field }) => (
+										<FormItem className="flex flex-row items-start space-x-3 space-y-0">
+											<FormControl>
+												<input
+													type="checkbox"
+													checked={field.value}
+													onChange={field.onChange}
+													className="h-4 w-4 text-craft-brown focus:ring-craft-brown border-gray-300 rounded"
+												/>
+											</FormControl>
+											<div className="space-y-1 leading-none">
+												<FormLabel>
+													Admin Access
+												</FormLabel>
+												<p className="text-sm text-gray-500">
+													Grant admin privileges to
+													this account
+												</p>
+											</div>
 										</FormItem>
 									)}
 								/>
