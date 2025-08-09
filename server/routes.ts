@@ -167,11 +167,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 	// Product routes
 	app.get("/api/products", async (req, res) => {
 		try {
-			const { country, material, search } = req.query;
+			const { country, material } = req.query;
 			const products = await storage.getProducts({
 				country: country as string,
 				material: material as string,
-				search: search as string,
 			});
 			res.json(products);
 		} catch (error) {
@@ -179,24 +178,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 		}
 	});
 
-	app.get("/api/products/search", async (req, res) => {
+	app.get("/api/products/featured", async (req, res) => {
 		try {
-			const { q, limit = "6" } = req.query;
-			if (!q || typeof q !== "string" || q.trim().length < 2) {
-				return res.json([]);
-			}
-
-			const suggestions = await storage.searchProducts(
-				q.trim(),
-				parseInt(limit as string)
-			);
-			res.json(suggestions);
+			const featuredProducts = await storage.getFeaturedProducts();
+			res.json(featuredProducts);
 		} catch (error) {
-			res.status(500).json({
-				message: "Failed to fetch search suggestions",
-			});
+			res.status(500).json({ message: "Failed to fetch featured products" });
 		}
 	});
+
+	
 
 	app.get("/api/products/:id", async (req, res) => {
 		try {
@@ -429,6 +420,30 @@ ${messageData.message}
 				res.json({ message: "Product deleted successfully" });
 			} catch (error) {
 				res.status(500).json({ message: "Failed to delete product" });
+			}
+		}
+	);
+
+	app.put(
+		"/api/admin/products/:id/featured",
+		requireAdmin,
+		async (req: any, res) => {
+			try {
+				const { featured } = req.body;
+				const product = await storage.toggleProductFeatured(
+					req.params.id,
+					featured
+				);
+				if (!product) {
+					return res
+						.status(404)
+						.json({ message: "Product not found" });
+				}
+				res.json(product);
+			} catch (error) {
+				res.status(500).json({
+					message: "Failed to update featured status",
+				});
 			}
 		}
 	);

@@ -17,7 +17,7 @@ export default function ProductCard({ product, viewMode }: ProductCardProps) {
   const { addToCart, isAdding } = useCart();
 
   const hasDiscount = product.discountedPrice && parseFloat(product.discountedPrice) < parseFloat(product.originalPrice);
-  const discountPercentage = hasDiscount 
+  const discountPercentage = hasDiscount
     ? Math.round(((parseFloat(product.originalPrice) - parseFloat(product.discountedPrice!)) / parseFloat(product.originalPrice)) * 100)
     : 0;
 
@@ -43,13 +43,18 @@ export default function ProductCard({ product, viewMode }: ProductCardProps) {
                   {discountPercentage}% OFF
                 </Badge>
               )}
+              {product.featured && (
+                <Badge className="absolute top-2 left-2 bg-yellow-600 text-white">
+                  Featured
+                </Badge>
+              )}
             </div>
             <CardContent className="flex-1 p-6">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">{product.name}</h3>
                   <p className="text-gray-600 mb-4 line-clamp-2">{product.description}</p>
-                  
+
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="flex items-center text-sm text-gray-500">
                       <MapPin className="w-4 h-4 mr-1" />
@@ -75,7 +80,7 @@ export default function ProductCard({ product, viewMode }: ProductCardProps) {
                         </span>
                       )}
                     </div>
-                    
+
                     <Button
                       onClick={handleAddToCart}
                       disabled={isAdding}
@@ -113,11 +118,16 @@ export default function ProductCard({ product, viewMode }: ProductCardProps) {
               Out of Stock
             </Badge>
           )}
+          {product.featured && (
+            <Badge className="absolute top-2 left-2 bg-yellow-600 text-white">
+              Featured
+            </Badge>
+          )}
         </div>
         <CardContent className="p-4">
           <h3 className="font-semibold text-gray-900 mb-1 truncate">{product.name}</h3>
           <p className="text-sm text-gray-600 mb-2 line-clamp-2">{product.description}</p>
-          
+
           <div className="flex items-center mb-2 space-x-2">
             <span className="text-lg font-bold text-craft-brown">
               {formatPrice(product.discountedPrice || product.originalPrice)}
@@ -128,7 +138,7 @@ export default function ProductCard({ product, viewMode }: ProductCardProps) {
               </span>
             )}
           </div>
-          
+
           <div className="flex items-center justify-between text-xs text-gray-500">
             <div className="flex items-center">
               <MapPin className="w-3 h-3 mr-1" />

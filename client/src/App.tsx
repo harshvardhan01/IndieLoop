@@ -17,6 +17,9 @@ import Collections from "@/pages/Collections";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import Admin from "@/pages/Admin";
+import AdminProducts from "@/pages/admin/AdminProducts";
+import AdminOrders from "@/pages/admin/AdminOrders";
+import AdminSupport from "@/pages/admin/AdminSupport";
 import Header from "@/components/Header";
 
 function Router() {
@@ -46,6 +49,9 @@ function Router() {
 				<Route path="/register" component={Register} />
 				{isAuthenticated && <Route path="/orders" component={Orders} />}
 				{isAuthenticated && <Route path="/admin" component={Admin} />}
+				{isAuthenticated && <Route path="/admin/products" component={AdminProducts} />}
+				{isAuthenticated && <Route path="/admin/orders" component={AdminOrders} />}
+				{isAuthenticated && <Route path="/admin/support" component={AdminSupport} />}
 				<Route component={NotFound} />
 			</Switch>
 		</div>

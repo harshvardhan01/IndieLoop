@@ -1,11 +1,18 @@
-import { useLocation, Link } from "wouter";
-import ProductGrid from "@/components/ProductGrid";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import ProductCard from "@/components/ProductCard";
+import { Product } from "@/types";
 
 export default function Home() {
-	const [location] = useLocation();
-	const searchParams = new URLSearchParams(location.split("?")[1] || "");
-	const search = searchParams.get("search") || "";
+	const { data: featuredProducts = [], isLoading } = useQuery<Product[]>({
+		queryKey: ["featured-products"],
+		queryFn: async () => {
+			const response = await fetch("/api/products/featured");
+			if (!response.ok) throw new Error("Failed to fetch featured products");
+			return response.json();
+		},
+	});
 
 	return (
 		<div className="min-h-screen bg-gray-50">
@@ -29,9 +36,49 @@ export default function Home() {
 				</div>
 			</section>
 
-			{/* Products Section */}
-			<section className="py-8">
-				<ProductGrid filters={{ search }} />
+			{/* Featured Products Section */}
+			<section className="py-16 bg-white">
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+					<div className="text-center mb-12">
+						<h3 className="text-3xl font-display font-bold text-craft-brown mb-4">
+							Featured Products
+						</h3>
+						<p className="text-gray-600 max-w-2xl mx-auto">
+							Handpicked by our team - discover the finest artisan creations from around the world.
+						</p>
+					</div>
+
+					{isLoading ? (
+						<div className="flex items-center justify-center py-12">
+							<div className="animate-spin rounded-full h-16 w-16 border-b-2 border-craft-brown"></div>
+						</div>
+					) : featuredProducts.length === 0 ? (
+						<div className="text-center py-12">
+							<h4 className="text-lg font-medium text-gray-900 mb-2">No featured products yet</h4>
+							<p className="text-gray-600 mb-6">Our team is curating the best products for you.</p>
+							<Link href="/collections">
+								<Button className="bg-craft-brown hover:bg-craft-brown/90">
+									Browse All Products
+								</Button>
+							</Link>
+						</div>
+					) : (
+						<>
+							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+								{featuredProducts.map((product) => (
+									<ProductCard key={product.id} product={product} viewMode="grid" />
+								))}
+							</div>
+							<div className="text-center">
+								<Link href="/collections">
+									<Button className="bg-craft-brown hover:bg-craft-brown/90 px-8 py-3 text-lg">
+										Explore All Collections
+									</Button>
+								</Link>
+							</div>
+						</>
+					)}
+				</div>
 			</section>
 
 			{/* Features Section */}

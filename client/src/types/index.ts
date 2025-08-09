@@ -44,3 +44,20 @@ export interface FilterOptions {
   material?: string;
   search?: string;
 }
+
+export interface Product {
+	id: string;
+	asin: string;
+	name: string;
+	description: string;
+	originalPrice: string;
+	discountedPrice?: string;
+	material: string;
+	countryOfOrigin: string;
+	images: string[];
+	dimensions?: string;
+	weight?: string;
+	inStock: boolean;
+	featured: boolean;
+	createdAt: string;
+}

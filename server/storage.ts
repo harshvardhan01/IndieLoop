@@ -24,16 +24,16 @@ export interface IStorage {
 	getProducts(filters?: {
 		country?: string;
 		material?: string;
-		search?: string;
 	}): Promise<Product[]>;
+	getFeaturedProducts(): Promise<Product[]>; // Added for featured products
 	getProduct(id: string): Promise<Product | undefined>;
-	searchProducts(query: string, limit?: number): Promise<Product[]>;
 	createProduct(product: InsertProduct): Promise<Product>;
 	updateProduct(
 		id: string,
 		productData: InsertProduct
 	): Promise<Product | null>;
 	deleteProduct(id: string): Promise<boolean>;
+	toggleProductFeatured(id: string, featured: boolean): Promise<Product | null>; // Added for admin control
 
 	// Review operations
 	getProductReviews(productId: string): Promise<Review[]>;
@@ -109,6 +109,7 @@ export class MemStorage implements IStorage {
 				dimensions: '12" x 8" x 3"',
 				weight: "500g",
 				inStock: true,
+				featured: false, // Default to false
 			},
 			{
 				name: "Peruvian Alpaca Scarf",
@@ -125,6 +126,7 @@ export class MemStorage implements IStorage {
 				dimensions: '60" x 12"',
 				weight: "200g",
 				inStock: true,
+				featured: true, // Example featured product
 			},
 			{
 				name: "Moroccan Ceramic Vase",
@@ -141,6 +143,7 @@ export class MemStorage implements IStorage {
 				dimensions: '8" x 12"',
 				weight: "800g",
 				inStock: true,
+				featured: false,
 			},
 			{
 				name: "Silver Wire Bracelet",
@@ -157,6 +160,7 @@ export class MemStorage implements IStorage {
 				dimensions: '7" circumference',
 				weight: "50g",
 				inStock: true,
+				featured: false,
 			},
 			{
 				name: "Guatemalan Leather Bag",
@@ -168,11 +172,12 @@ export class MemStorage implements IStorage {
 				material: "Leather",
 				countryOfOrigin: "Guatemala",
 				images: [
-					"https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=600",
+					"https://images.unsplash.com/photo-1553062407098eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=600",
 				],
 				dimensions: '12" x 10" x 4"',
 				weight: "600g",
 				inStock: true,
+				featured: true, // Example featured product
 			},
 			{
 				name: "Bamboo Storage Basket",
@@ -189,6 +194,7 @@ export class MemStorage implements IStorage {
 				dimensions: '10" x 8"',
 				weight: "300g",
 				inStock: true,
+				featured: false,
 			},
 		];
 
@@ -225,11 +231,10 @@ export class MemStorage implements IStorage {
 	}
 
 	// Product operations
-	async getProducts(filters?: {
+	async getProducts(filters: {
 		country?: string;
 		material?: string;
-		search?: string;
-	}): Promise<Product[]> {
+	} = {}): Promise<Product[]> {
 		let products = Array.from(this.products.values());
 
 		if (filters?.country) {
@@ -247,21 +252,13 @@ export class MemStorage implements IStorage {
 			);
 		}
 
-		if (filters?.search) {
-			const searchTerms = filters.search
-				.toLowerCase()
-				.trim()
-				.split(/\s+/);
-			products = products.filter((p) => {
-				const searchableText =
-					`${p.name} ${p.description} ${p.material} ${p.countryOfOrigin}`.toLowerCase();
-				return searchTerms.every((term) =>
-					searchableText.includes(term)
-				);
-			});
-		}
-
 		return products;
+	}
+
+	async getFeaturedProducts(): Promise<Product[]> {
+		return Array.from(this.products.values()).filter(
+			(product) => product.featured
+		);
 	}
 
 	async getProduct(id: string): Promise<Product | undefined> {
@@ -279,6 +276,7 @@ export class MemStorage implements IStorage {
 			dimensions: insertProduct.dimensions || null,
 			weight: insertProduct.weight || null,
 			inStock: insertProduct.inStock ?? true,
+			featured: insertProduct.featured ?? false, // Ensure featured is set
 			createdAt: new Date(),
 		};
 		this.products.set(id, product);
@@ -302,6 +300,7 @@ export class MemStorage implements IStorage {
 			dimensions: insertProduct.dimensions || null,
 			weight: insertProduct.weight || null,
 			inStock: insertProduct.inStock ?? true,
+			featured: insertProduct.featured ?? existingProduct.featured, // Preserve featured status if not provided
 		};
 		this.products.set(id, updatedProduct);
 		return updatedProduct;
@@ -311,25 +310,19 @@ export class MemStorage implements IStorage {
 		return this.products.delete(id);
 	}
 
-	async searchProducts(
-		query: string,
-		limit: number = 100
-	): Promise<Product[]> {
-		const searchTerms = query.toLowerCase().trim().split(/\s+/);
-		const matchingProducts = Array.from(this.products.values()).filter(
-			(p) => {
-				const searchableText =
-					`${p.name} ${p.description} ${p.material} ${p.countryOfOrigin}`.toLowerCase();
-				return searchTerms.every((term) =>
-					searchableText.includes(term)
-				);
-			}
-		);
-		return matchingProducts.slice(0, limit);
-	}
+	async toggleProductFeatured(id: string, featured: boolean): Promise<Product | null> {
+		const existingProduct = this.products.get(id);
+		if (!existingProduct) {
+			return null;
+		}
 
-	// The second createProduct method was a duplicate and is now consolidated
-	// The updateProduct method also had a duplicate, which is now consolidated.
+		const updatedProduct = {
+			...existingProduct,
+			featured,
+		};
+		this.products.set(id, updatedProduct);
+		return updatedProduct;
+	}
 
 	// Review operations
 	async getProductReviews(productId: string): Promise<Review[]> {

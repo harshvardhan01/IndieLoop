@@ -1,89 +1,26 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Search, User, ShoppingCart, Menu, X } from "lucide-react";
+import { User, ShoppingCart, Menu, X, ChevronDown, Package, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
-import { useQuery } from "@tanstack/react-query";
 import CurrencySelector from "./CurrencySelector";
 import CartSidebar from "./CartSidebar";
 import SupportForm from "./SupportForm";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Header() {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [isCartOpen, setIsCartOpen] = useState(false);
 	const [isSupportOpen, setIsSupportOpen] = useState(false);
-	const [searchQuery, setSearchQuery] = useState("");
-	const [showSuggestions, setShowSuggestions] = useState(false);
 	const [, setLocation] = useLocation();
 	const { isAuthenticated, user } = useAuth();
 	const { totalItems } = useCart();
-	const searchRef = useRef<HTMLDivElement>(null);
-
-	// Fetch search suggestions with debouncing
-	const { data: suggestions = [] } = useQuery({
-		queryKey: ["/api/products/search", searchQuery.trim()],
-		queryFn: async () => {
-			if (searchQuery.trim().length < 2) return [];
-			const response = await fetch(
-				`/api/products/search?q=${encodeURIComponent(
-					searchQuery.trim()
-				)}&limit=6`
-			);
-			if (!response.ok) throw new Error("Failed to fetch suggestions");
-			return response.json();
-		},
-		enabled: searchQuery.trim().length >= 2,
-		staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-	});
-
-	// Close suggestions when clicking outside
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (
-				searchRef.current &&
-				!searchRef.current.contains(event.target as Node)
-			) {
-				setShowSuggestions(false);
-			}
-		};
-
-		document.addEventListener("mousedown", handleClickOutside);
-		return () =>
-			document.removeEventListener("mousedown", handleClickOutside);
-	}, []);
-
-	const handleSearch = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (searchQuery.trim()) {
-			setLocation(
-				`/collections?search=${encodeURIComponent(searchQuery.trim())}`
-			);
-			setShowSuggestions(false);
-		}
-	};
-
-	const handleSearchInputChange = (
-		e: React.ChangeEvent<HTMLInputElement>
-	) => {
-		const value = e.target.value;
-		setSearchQuery(value);
-		setShowSuggestions(value.trim().length > 0);
-	};
-
-	const handleSuggestionClick = (suggestion: any) => {
-		console.log("Clicking suggestion:", suggestion);
-		setSearchQuery(suggestion.name);
-		setShowSuggestions(false);
-		setLocation(`/product/${suggestion.id}`);
-	};
-
-	const handleCategorySearch = (term: string) => {
-		setSearchQuery(term);
-		setShowSuggestions(false);
-		setLocation(`/collections?search=${encodeURIComponent(term)}`);
-	};
 
 	const handleLogout = () => {
 		const sessionId = localStorage.getItem("sessionId");
@@ -119,76 +56,7 @@ export default function Header() {
 							</Link>
 						</div>
 
-						{/* Search Bar - Desktop */}
-						<div
-							className="hidden md:block flex-1 max-w-lg mx-8"
-							ref={searchRef}>
-							<form onSubmit={handleSearch} className="relative">
-								<Input
-									type="text"
-									placeholder="Search handcrafted products..."
-									value={searchQuery}
-									onChange={handleSearchInputChange}
-									onFocus={() =>
-										searchQuery.trim().length > 0 &&
-										setShowSuggestions(true)
-									}
-									className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-craft-brown focus:border-transparent"
-								/>
-								<Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
 
-								{/* Search Suggestions Dropdown */}
-								{showSuggestions && suggestions.length > 0 && (
-									<div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg mt-1 z-50 max-h-80 overflow-y-auto">
-										{suggestions.map((product: any) => (
-											<div
-												key={product.id}
-												onClick={() =>
-													handleSuggestionClick(
-														product
-													)
-												}
-												className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0">
-												<div className="font-medium text-gray-900">
-													{product.name}
-												</div>
-												<div className="text-sm text-gray-500">
-													{product.material} •{" "}
-													{product.countryOfOrigin}
-												</div>
-											</div>
-										))}
-
-										{/* Quick category searches */}
-										<div className="p-2 border-t border-gray-200 bg-gray-50">
-											<div className="text-xs text-gray-500 mb-2">
-												Quick searches:
-											</div>
-											<div className="flex flex-wrap gap-1">
-												{[
-													"Wood",
-													"Textile",
-													"Ceramic",
-													"Metal",
-													"Leather",
-												].map((material) => (
-													<button
-														key={material}
-														onClick={() =>
-															handleCategorySearch(
-																material
-															)
-														}
-														className="text-xs px-2 py-1 bg-white border border-gray-200 rounded hover:bg-craft-brown hover:text-white transition-colors">
-														{material}
-													</button>
-												))}
-											</div>
-										</div>
-									</div>
-								)}
-							</form>
-						</div>
 
 						{/* Right Navigation - Desktop */}
 						<div className="hidden md:flex items-center space-x-4">
@@ -203,17 +71,34 @@ export default function Header() {
 										<Link to="/orders">Orders</Link>
 									</Button>
 									{user?.isAdmin && (
-										<Link href="/admin">
-											<Button
-												variant={
-													location === "/admin"
-														? "default"
-														: "ghost"
-												}
-												size="sm">
-												Admin
-											</Button>
-										</Link>
+										<DropdownMenu>
+											<DropdownMenuTrigger asChild>
+												<Button variant="ghost" className="flex items-center gap-1">
+													Admin
+													<ChevronDown className="h-4 w-4" />
+												</Button>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent align="end">
+												<DropdownMenuItem asChild>
+													<Link href="/admin/products" className="flex items-center gap-2 w-full">
+														<Package className="h-4 w-4" />
+														Products
+													</Link>
+												</DropdownMenuItem>
+												<DropdownMenuItem asChild>
+													<Link href="/admin/orders" className="flex items-center gap-2 w-full">
+														<ShoppingCart className="h-4 w-4" />
+														Orders
+													</Link>
+												</DropdownMenuItem>
+												<DropdownMenuItem asChild>
+													<Link href="/admin/support" className="flex items-center gap-2 w-full">
+														<MessageSquare className="h-4 w-4" />
+														Support
+													</Link>
+												</DropdownMenuItem>
+											</DropdownMenuContent>
+										</DropdownMenu>
 									)}
 									<Button
 										onClick={handleLogout}
@@ -260,45 +145,7 @@ export default function Header() {
 						</div>
 					</div>
 
-					{/* Mobile Search */}
-					<div className="md:hidden pb-4" ref={searchRef}>
-						<form onSubmit={handleSearch} className="relative">
-							<Input
-								type="text"
-								placeholder="Search handcrafted products..."
-								value={searchQuery}
-								onChange={handleSearchInputChange}
-								onFocus={() =>
-									searchQuery.trim().length > 0 &&
-									setShowSuggestions(true)
-								}
-								className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-craft-brown focus:border-transparent"
-							/>
-							<Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
 
-							{/* Mobile Search Suggestions */}
-							{showSuggestions && suggestions.length > 0 && (
-								<div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg mt-1 z-50 max-h-60 overflow-y-auto">
-									{suggestions.map((product: any) => (
-										<div
-											key={product.id}
-											onClick={() =>
-												handleSuggestionClick(product)
-											}
-											className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0">
-											<div className="font-medium text-gray-900 text-sm">
-												{product.name}
-											</div>
-											<div className="text-xs text-gray-500">
-												{product.material} •{" "}
-												{product.countryOfOrigin}
-											</div>
-										</div>
-									))}
-								</div>
-							)}
-						</form>
-					</div>
 
 					{/* Mobile Currency Selector - Always Visible */}
 					<div className="md:hidden border-t border-gray-200 py-2">
@@ -325,17 +172,32 @@ export default function Header() {
 											</Button>
 										</Link>
 										{user?.isAdmin && (
-											<Link href="/admin">
-												<Button
-													variant={
-														location === "/admin"
-															? "default"
-															: "ghost"
-													}
-													className="justify-start w-full">
+											<div className="w-full">
+												<div className="text-sm text-gray-600 font-medium mb-2 px-2">
 													Admin
-												</Button>
-											</Link>
+												</div>
+												<Link href="/admin/products">
+													<Button
+														variant="ghost"
+														className="justify-start w-full pl-4">
+														Products
+													</Button>
+												</Link>
+												<Link href="/admin/orders">
+													<Button
+														variant="ghost"
+														className="justify-start w-full pl-4">
+														Orders
+													</Button>
+												</Link>
+												<Link href="/admin/support">
+													<Button
+														variant="ghost"
+														className="justify-start w-full pl-4">
+														Support
+													</Button>
+												</Link>
+											</div>
 										)}
 										<Button
 											onClick={handleLogout}

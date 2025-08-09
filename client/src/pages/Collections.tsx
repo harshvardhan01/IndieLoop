@@ -25,32 +25,23 @@ export default function Collections() {
 	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 	const [countryFilter, setCountryFilter] = useState("all");
 	const [materialFilter, setMaterialFilter] = useState("all");
-	const [sortBy, setSortBy] = useState("featured");
-	const [priceRange, setPriceRange] = useState({ min: "", max: "" });
-	const [inStockOnly, setInStockOnly] = useState(false);
+	const [appliedCountryFilter, setAppliedCountryFilter] = useState("all");
+	const [appliedMaterialFilter, setAppliedMaterialFilter] = useState("all");
 
 	const { data: products = [], isLoading } = useQuery({
 		queryKey: [
 			"/api/products",
 			{
-				search: searchQuery,
-				country: countryFilter,
-				material: materialFilter,
-				minPrice: priceRange.min,
-				maxPrice: priceRange.max,
-				inStock: inStockOnly,
+				country: appliedCountryFilter,
+				material: appliedMaterialFilter,
 			},
 		],
 		queryFn: async () => {
 			const params = new URLSearchParams();
-			if (searchQuery) params.append("search", searchQuery);
-			if (countryFilter && countryFilter !== "all")
-				params.append("country", countryFilter);
-			if (materialFilter && materialFilter !== "all")
-				params.append("material", materialFilter);
-			if (priceRange.min) params.append("minPrice", priceRange.min);
-			if (priceRange.max) params.append("maxPrice", priceRange.max);
-			if (inStockOnly) params.append("inStock", "true");
+			if (appliedCountryFilter && appliedCountryFilter !== "all")
+				params.append("country", appliedCountryFilter);
+			if (appliedMaterialFilter && appliedMaterialFilter !== "all")
+				params.append("material", appliedMaterialFilter);
 
 			const response = await fetch(`/api/products?${params}`);
 			if (!response.ok) throw new Error("Failed to fetch products");
@@ -58,18 +49,21 @@ export default function Collections() {
 		},
 	});
 
+	const applyFilters = () => {
+		setAppliedCountryFilter(countryFilter);
+		setAppliedMaterialFilter(materialFilter);
+	};
+
 	const clearAllFilters = () => {
 		setCountryFilter("all");
 		setMaterialFilter("all");
-		setPriceRange({ min: "", max: "" });
-		setInStockOnly(false);
+		setAppliedCountryFilter("all");
+		setAppliedMaterialFilter("all");
 	};
 
 	const activeFiltersCount = [
-		countryFilter !== "all",
-		materialFilter !== "all",
-		priceRange.min || priceRange.max,
-		inStockOnly,
+		appliedCountryFilter !== "all",
+		appliedMaterialFilter !== "all",
 	].filter(Boolean).length;
 
 	if (isLoading) {
@@ -146,7 +140,7 @@ export default function Collections() {
 							</div>
 						</CardHeader>
 						<CardContent>
-							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 								<Select
 									value={countryFilter}
 									onValueChange={setCountryFilter}>
@@ -200,66 +194,11 @@ export default function Collections() {
 									</SelectContent>
 								</Select>
 
-								<Input
-									placeholder="Min Price (₹)"
-									type="number"
-									value={priceRange.min}
-									onChange={(e) =>
-										setPriceRange((prev) => ({
-											...prev,
-											min: e.target.value,
-										}))
-									}
-								/>
-
-								<Input
-									placeholder="Max Price (₹)"
-									type="number"
-									value={priceRange.max}
-									onChange={(e) =>
-										setPriceRange((prev) => ({
-											...prev,
-											max: e.target.value,
-										}))
-									}
-								/>
-
-								<div className="flex items-center space-x-2">
-									<Checkbox
-										id="inStock"
-										checked={inStockOnly}
-										onCheckedChange={(checked) =>
-											setInStockOnly(!!checked)
-										}
-									/>
-									<label
-										htmlFor="inStock"
-										className="text-sm font-medium">
-										In Stock Only
-									</label>
-								</div>
-
-								<Select
-									value={sortBy}
-									onValueChange={setSortBy}>
-									<SelectTrigger>
-										<SelectValue placeholder="Sort by" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="featured">
-											Featured
-										</SelectItem>
-										<SelectItem value="price-low">
-											Price: Low to High
-										</SelectItem>
-										<SelectItem value="price-high">
-											Price: High to Low
-										</SelectItem>
-										<SelectItem value="newest">
-											Newest First
-										</SelectItem>
-									</SelectContent>
-								</Select>
+								<Button
+									onClick={applyFilters}
+									className="bg-craft-brown hover:bg-craft-brown/90">
+									Apply Filters
+								</Button>
 							</div>
 						</CardContent>
 					</Card>
