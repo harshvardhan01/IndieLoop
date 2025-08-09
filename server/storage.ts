@@ -168,7 +168,7 @@ export class MemStorage implements IStorage {
 				material: "Leather",
 				countryOfOrigin: "Guatemala",
 				images: [
-					"https://images.unsplash.com/photo-1553062407098eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=600",
+					"https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=600",
 				],
 				dimensions: '12" x 10" x 4"',
 				weight: "600g",
