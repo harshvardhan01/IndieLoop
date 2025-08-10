@@ -11,8 +11,12 @@ import {
 	type InsertCartItem,
 	type SupportMessage,
 	type InsertSupportMessage,
+	type Address, // Added for address type
+	type InsertAddress, // Added for insert address type
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { eq, desc } from "drizzle-orm"; // Added for drizzle functions
+import { db } from "./db"; // Assuming db is exported from './db'
 
 export interface IStorage {
 	// User operations
@@ -76,6 +80,12 @@ export interface IStorage {
 		id: string,
 		status: string
 	): Promise<SupportMessage | undefined>;
+
+	// Address operations
+	getUserAddresses(userId: string): Promise<Address[]>;
+	createAddress(addressData: InsertAddress): Promise<Address>;
+	updateAddress(id: string, addressData: InsertAddress): Promise<Address | undefined>;
+	deleteAddress(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -85,121 +95,100 @@ export class MemStorage implements IStorage {
 	private orders: Map<string, Order> = new Map();
 	private cartItems: Map<string, CartItem> = new Map();
 	private supportMessages: Map<string, SupportMessage> = new Map();
+	// No need for addresses map as we are using drizzle-orm for storage
 
 	constructor() {
-		this.seedData();
+		this.seedData(); // Initialize with sample data
 	}
 
 	private seedData() {
-		// Seed some sample products
-		const sampleProducts: InsertProduct[] = [
+		// Add sample products
+		const sampleProducts = [
 			{
-				name: "Artisan Wooden Bowl",
-				asin: "B001234567",
-				description:
-					"Hand-carved from sustainable teak wood by skilled artisans in Kerala, India. Each bowl is unique with its own grain pattern and natural beauty.",
-				originalPrice: "3000.00",
-				discountedPrice: "2400.00",
+				name: "Handwoven Silk Scarf",
+				description: "Beautiful handwoven silk scarf with traditional patterns",
+				originalPrice: "2500",
+				discountedPrice: "2000",
+				material: "Textile",
+				countryOfOrigin: "India",
+				images: ["https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=400"],
+				dimensions: "180cm x 70cm",
+				weight: "150g",
+				inStock: true,
+				featured: true,
+			},
+			{
+				name: "Wooden Hand Carved Bowl",
+				description: "Artisan crafted wooden bowl perfect for serving",
+				originalPrice: "1500",
+				discountedPrice: "1200",
 				material: "Wood",
 				countryOfOrigin: "India",
-				images: [
-					"https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=600",
-					"https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=600",
-				],
-				dimensions: '12" x 8" x 3"',
-				weight: "500g",
+				images: ["https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"],
+				dimensions: "25cm diameter",
+				weight: "400g",
 				inStock: true,
-				featured: false, // Default to false
+				featured: false,
 			},
 			{
-				name: "Peruvian Alpaca Scarf",
-				asin: "B001234566",
-				description:
-					"Soft alpaca wool with traditional patterns, handwoven by Peruvian artisans using ancestral techniques.",
-				originalPrice: "4200.00",
-				discountedPrice: null,
-				material: "Textile",
-				countryOfOrigin: "Peru",
-				images: [
-					"https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=600",
-				],
-				dimensions: '60" x 12"',
-				weight: "200g",
-				inStock: true,
-				featured: true, // Example featured product
-			},
-			{
-				name: "Moroccan Ceramic Vase",
-				asin: "B001234565",
-				description:
-					"Traditional blue pottery with intricate details, handcrafted in Fez using centuries-old techniques.",
-				originalPrice: "3600.00",
-				discountedPrice: null,
+				name: "Ceramic Dinner Plate Set",
+				description: "Hand-painted ceramic plates with floral motifs",
+				originalPrice: "3000",
+				discountedPrice: "2400",
 				material: "Ceramic",
-				countryOfOrigin: "Morocco",
-				images: [
-					"https://images.unsplash.com/photo-1578321272176-b7bbc0679853?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=600",
-				],
-				dimensions: '8" x 12"',
+				countryOfOrigin: "India",
+				images: ["https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"],
+				dimensions: "26cm diameter",
 				weight: "800g",
 				inStock: true,
-				featured: false,
+				featured: true,
 			},
 			{
-				name: "Silver Wire Bracelet",
-				asin: "B001234564",
-				description:
-					"Hand-forged sterling silver with natural stones, crafted by Thai silversmiths.",
-				originalPrice: "5800.00",
-				discountedPrice: null,
-				material: "Metal",
-				countryOfOrigin: "Thailand",
-				images: [
-					"https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=600",
-				],
-				dimensions: '7" circumference',
-				weight: "50g",
-				inStock: true,
-				featured: false,
-			},
-			{
-				name: "Guatemalan Leather Bag",
-				asin: "B001234563",
-				description:
-					"Hand-stitched with traditional Mayan patterns, made from premium leather.",
-				originalPrice: "8000.00",
-				discountedPrice: "6800.00",
+				name: "Leather Handmade Wallet",
+				description: "Premium leather wallet with hand-stitched details",
+				originalPrice: "1800",
+				discountedPrice: "1440",
 				material: "Leather",
-				countryOfOrigin: "Guatemala",
-				images: [
-					"https://images.unsplash.com/photo-1553062407098eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=600",
-				],
-				dimensions: '12" x 10" x 4"',
-				weight: "600g",
+				countryOfOrigin: "India",
+				images: ["https://images.unsplash.com/photo-1627123424574-724758594e93?w=400"],
 				inStock: true,
-				featured: true, // Example featured product
+				featured: false,
 			},
 			{
 				name: "Bamboo Storage Basket",
-				asin: "B001234562",
-				description:
-					"Eco-friendly woven bamboo with natural finish, perfect for storage.",
-				originalPrice: "1800.00",
-				discountedPrice: null,
+				description: "Eco-friendly bamboo basket for storage",
+				originalPrice: "1200",
 				material: "Bamboo",
 				countryOfOrigin: "India",
-				images: [
-					"https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=600",
-				],
-				dimensions: '10" x 8"',
+				images: ["https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400"],
+				dimensions: "30cm x 20cm",
 				weight: "300g",
 				inStock: true,
 				featured: false,
-			},
+			}
 		];
 
-		sampleProducts.forEach((product) => {
-			this.createProduct(product);
+		// Create products
+		sampleProducts.forEach(async (productData) => {
+			await this.createProduct(productData);
+		});
+
+		// Add a sample admin user
+		this.createUser({
+			email: "admin@indieloop.com",
+			password: "admin123",
+			firstName: "Admin",
+			lastName: "User",
+			isAdmin: true,
+		});
+
+		// Add a sample regular user
+		this.createUser({
+			email: "user@example.com",
+			password: "user123",
+			firstName: "John",
+			lastName: "Doe",
+			isAdmin: false,
 		});
 	}
 
@@ -226,6 +215,8 @@ export class MemStorage implements IStorage {
 			id,
 			createdAt: new Date(),
 		};
+		// Add addresses property for in-memory storage
+		(user as any).addresses = [];
 		this.users.set(id, user);
 		return user;
 	}
@@ -345,6 +336,7 @@ export class MemStorage implements IStorage {
 
 	// Order operations
 	async getUserOrders(userId: string): Promise<Order[]> {
+		// Assuming addresses are populated within the Order object or can be fetched separately
 		return Array.from(this.orders.values()).filter(
 			(order) => order.userId === userId
 		);
@@ -484,6 +476,82 @@ export class MemStorage implements IStorage {
 		}
 		return undefined;
 	}
+
+	// Address operations
+	async getUserAddresses(userId: string): Promise<Address[]> {
+		const user = this.users.get(userId);
+		return (user as any)?.addresses || [];
+	}
+
+	async createAddress(insertAddress: InsertAddress): Promise<Address> {
+		const id = randomUUID();
+		const address: Address = {
+			...insertAddress,
+			id,
+			isDefault: insertAddress.isDefault || false,
+			createdAt: new Date(),
+		};
+		// In a real scenario, you'd interact with a database here.
+		// For this mock implementation, we'll simulate adding to a user's addresses.
+		const user = this.users.get(address.userId);
+		if (user) {
+			if (address.isDefault) {
+				// Unset other default addresses if this one is set as default
+				user.addresses = user.addresses.map(addr => ({ ...addr, isDefault: false }));
+			}
+			user.addresses.push(address);
+		} else {
+			// Create user if they don't exist (for seeding purposes if needed)
+			const newUser: User = {
+				id: address.userId,
+				name: "Sample User",
+				email: `${address.userId}@example.com`,
+				createdAt: new Date(),
+				addresses: [address]
+			};
+			this.users.set(newUser.id, newUser);
+		}
+		return address;
+	}
+
+	async updateAddress(id: string, insertAddress: InsertAddress): Promise<Address | undefined> {
+		const userId = insertAddress.userId;
+		const user = this.users.get(userId);
+
+		if (user) {
+			let addressToUpdate = user.addresses.find(addr => addr.id === id);
+			if (!addressToUpdate) return undefined;
+
+			// Handle default status update
+			if (insertAddress.isDefault && !addressToUpdate.isDefault) {
+				user.addresses = user.addresses.map(addr => ({ ...addr, isDefault: false }));
+			}
+
+			// Update the address
+			const updatedAddress = { ...addressToUpdate, ...insertAddress };
+			const index = user.addresses.indexOf(addressToUpdate);
+			user.addresses[index] = updatedAddress;
+
+			this.users.set(userId, user); // Update user in the map
+			return updatedAddress;
+		}
+		return undefined;
+	}
+
+	async deleteAddress(id: string): Promise<boolean> {
+		let deleted = false;
+		for (const user of this.users.values()) {
+			const initialLength = user.addresses.length;
+			user.addresses = user.addresses.filter(addr => addr.id !== id);
+			if (user.addresses.length < initialLength) {
+				this.users.set(user.id, user); // Update user in the map
+				deleted = true;
+				break; // Assuming an address ID is unique across all users
+			}
+		}
+		return deleted;
+	}
 }
 
+// Exporting the storage instance
 export const storage = new MemStorage();

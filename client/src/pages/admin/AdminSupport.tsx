@@ -1,7 +1,5 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { SupportMessage } from "@shared/schema";
 import {
 	Card,
 	CardContent,
@@ -16,13 +14,32 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Filter, Search } from "lucide-react";
+import { useState, useMemo } from "react";
+
+interface SupportMessage {
+	id: string;
+	firstName: string;
+	lastName: string;
+	email: string;
+	phone?: string;
+	subject: string;
+	message: string;
+	status: string;
+	createdAt: string;
+}
 
 export default function AdminSupport() {
 	const { user } = useAuth();
 	const { toast } = useToast();
 	const queryClient = useQueryClient();
+
+	// State for filters
+	const [filterStatus, setFilterStatus] = useState("all");
+	const [searchTerm, setSearchTerm] = useState("");
 
 	// Fetch support messages
 	const { data: messages = [] } = useQuery<SupportMessage[]>({
@@ -37,6 +54,19 @@ export default function AdminSupport() {
 			return response.json();
 		},
 	});
+
+	// Filtered messages
+	const filteredMessages = useMemo(() => {
+		return messages.filter((message) => {
+			const matchesStatus = filterStatus === "all" || filterStatus === "" || message.status === filterStatus;
+			const matchesSearch =
+				searchTerm === "" ||
+				message.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				message.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				message.email.toLowerCase().includes(searchTerm.toLowerCase());
+			return matchesStatus && matchesSearch;
+		});
+	}, [messages, filterStatus, searchTerm]);
 
 	// Update support message status mutation
 	const updateMessageStatusMutation = useMutation({
@@ -84,15 +114,53 @@ export default function AdminSupport() {
 				<h1 className="text-3xl font-bold">Support Messages</h1>
 			</div>
 
+			{/* Filters */}
+			<div className="mb-6 flex items-center gap-4">
+				<div className="flex items-center gap-2">
+					<label htmlFor="status-filter" className="font-medium">
+						Status:
+					</label>
+					<Select value={filterStatus} onValueChange={setFilterStatus}>
+						<SelectTrigger className="w-[150px]">
+							<SelectValue placeholder="All Statuses" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="all">All Statuses</SelectItem>
+							<SelectItem value="new">New</SelectItem>
+							<SelectItem value="in-progress">In Progress</SelectItem>
+							<SelectItem value="resolved">Resolved</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="flex items-center gap-2 flex-1">
+					<label htmlFor="search-filter" className="sr-only">
+						Search
+					</label>
+					<Input
+						id="search-filter"
+						type="text"
+						placeholder="Search by subject, message, or email..."
+						value={searchTerm}
+						onChange={(e) => setSearchTerm(e.target.value)}
+						className="flex-1"
+					/>
+					<Button variant="outline">
+						<Search className="h-4 w-4 mr-2" /> Search
+					</Button>
+				</div>
+			</div>
+
 			<div className="grid gap-6">
-				{messages.length === 0 ? (
+				{filteredMessages.length === 0 ? (
 					<Card>
 						<CardContent className="p-6">
-							<p className="text-center text-gray-500">No support messages found</p>
+							<p className="text-center text-gray-500">
+								No support messages found
+							</p>
 						</CardContent>
 					</Card>
 				) : (
-					messages.map((message) => (
+					filteredMessages.map((message: any) => (
 						<Card key={message.id}>
 							<CardHeader>
 								<div className="flex justify-between items-start">

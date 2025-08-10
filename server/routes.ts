@@ -316,6 +316,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 		}
 	});
 
+	// Cancel order route
+	app.put("/api/orders/:id/cancel", requireAuth, async (req: any, res) => {
+		try {
+			const order = await storage.updateOrderStatus(
+				req.params.id,
+				"cancelled"
+			);
+			if (!order) {
+				return res.status(404).json({ message: "Order not found" });
+			}
+			
+			// Verify the order belongs to the user (unless admin)
+			const userOrder = await storage.getUserOrders(req.user.userId);
+			const orderExists = userOrder.find(o => o.id === req.params.id);
+			
+			if (!orderExists && !req.user.isAdmin) {
+				return res.status(403).json({ message: "Not authorized to cancel this order" });
+			}
+			
+			res.json(order);
+		} catch (error) {
+			res.status(500).json({ message: "Failed to cancel order" });
+		}
+	});
+
 	// Support routes
 	app.post("/api/support", async (req, res) => {
 		try {
@@ -347,6 +372,53 @@ ${messageData.message}
 					.json({ message: error.errors[0].message });
 			}
 			res.status(500).json({ message: "Failed to send support message" });
+		}
+	});
+
+	// Address routes
+	app.get("/api/addresses", requireAuth, async (req: any, res) => {
+		try {
+			const addresses = await storage.getUserAddresses(req.user.userId);
+			res.json(addresses);
+		} catch (error) {
+			res.status(500).json({ message: "Failed to fetch addresses" });
+		}
+	});
+
+	app.post("/api/addresses", requireAuth, async (req: any, res) => {
+		try {
+			const addressData = {
+				...req.body,
+				userId: req.user.userId,
+			};
+			const address = await storage.createAddress(addressData);
+			res.json(address);
+		} catch (error) {
+			res.status(500).json({ message: "Failed to create address" });
+		}
+	});
+
+	app.put("/api/addresses/:id", requireAuth, async (req: any, res) => {
+		try {
+			const address = await storage.updateAddress(req.params.id, req.body);
+			if (!address) {
+				return res.status(404).json({ message: "Address not found" });
+			}
+			res.json(address);
+		} catch (error) {
+			res.status(500).json({ message: "Failed to update address" });
+		}
+	});
+
+	app.delete("/api/addresses/:id", requireAuth, async (req: any, res) => {
+		try {
+			const success = await storage.deleteAddress(req.params.id);
+			if (!success) {
+				return res.status(404).json({ message: "Address not found" });
+			}
+			res.json({ message: "Address deleted successfully" });
+		} catch (error) {
+			res.status(500).json({ message: "Failed to delete address" });
 		}
 	});
 
@@ -514,6 +586,24 @@ ${messageData.message}
 			}
 		}
 	);
+
+	// Admin get user details
+	app.get("/api/admin/users/:id", requireAdmin, async (req: any, res) => {
+		try {
+			const user = await storage.getUser(req.params.id);
+			if (!user) {
+				return res.status(404).json({ message: "User not found" });
+			}
+			res.json({
+				id: user.id,
+				email: user.email,
+				firstName: user.firstName,
+				lastName: user.lastName,
+			});
+		} catch (error) {
+			res.status(500).json({ message: "Failed to fetch user details" });
+		}
+	});
 
 	// Currency conversion rates (mock data)
 	app.get("/api/currency-rates", async (req, res) => {

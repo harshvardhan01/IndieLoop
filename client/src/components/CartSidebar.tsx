@@ -146,11 +146,13 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
               </span>
             </div>
             <Button
-              onClick={handleCheckout}
-              disabled={checkoutMutation.isPending}
+              onClick={() => {
+                onClose();
+                window.location.href = "/cart";
+              }}
               className="w-full bg-craft-brown hover:bg-craft-brown/90 mb-2"
             >
-              {checkoutMutation.isPending ? "Processing..." : "Checkout"}
+              View Cart
             </Button>
             <Button
               onClick={onClose}

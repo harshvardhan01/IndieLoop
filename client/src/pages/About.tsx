@@ -64,12 +64,11 @@ export default function About() {
 							skill, and the artist's vision.
 						</p>
 						<p className="mb-4">
-							We work directly with artisans from India, Peru,
-							Morocco, Thailand, and Guatemala, ensuring they
-							receive fair compensation for their incredible
-							skills. Our platform bridges the gap between
-							traditional craftsmanship and modern consumers who
-							value authenticity and quality.
+							We work directly with artisans from multiple
+							countries, ensuring they receive fair compensation
+							for their incredible skills. Our platform bridges
+							the gap between traditional craftsmanship and modern
+							consumers who value authenticity and quality.
 						</p>
 						<p>
 							When you shop with IndieLoop, you're not just buying

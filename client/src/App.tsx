@@ -21,6 +21,12 @@ import AdminProducts from "@/pages/admin/AdminProducts";
 import AdminOrders from "@/pages/admin/AdminOrders";
 import AdminSupport from "@/pages/admin/AdminSupport";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import Addresses from "@/pages/Addresses";
+import ErrorBanner from "@/components/ErrorBanner";
+import { ErrorContext, useErrorProvider } from "@/hooks/useError";
+import Checkout from "@/pages/Checkout";
+
 
 function Router() {
 	const { isAuthenticated, isLoading } = useAuth();
@@ -34,36 +40,52 @@ function Router() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50">
+		<div className="min-h-screen bg-background flex flex-col">
 			<Header />
-			<Switch>
-				<Route path="/" component={Home} />
-				<Route path="/collections" component={Collections} />
-				<Route path="/about" component={About} />
-				<Route path="/contact" component={Contact} />
-				<Route path="/privacy" component={Privacy} />
-				<Route path="/terms" component={Terms} />
-				<Route path="/product/:id" component={ProductDetail} />
-				<Route path="/cart" component={Cart} />
-				<Route path="/login" component={Login} />
-				<Route path="/register" component={Register} />
-				{isAuthenticated && <Route path="/orders" component={Orders} />}
-				{isAuthenticated && <Route path="/admin" component={Admin} />}
-				{isAuthenticated && <Route path="/admin/products" component={AdminProducts} />}
-				{isAuthenticated && <Route path="/admin/orders" component={AdminOrders} />}
-				{isAuthenticated && <Route path="/admin/support" component={AdminSupport} />}
-				<Route component={NotFound} />
-			</Switch>
+			<main className="flex-1">
+				<Switch>
+					<Route path="/" component={Home} />
+					<Route path="/login" component={Login} />
+					<Route path="/register" component={Register} />
+					<Route path="/collections" component={Collections} />
+					<Route path="/product/:id" component={ProductDetail} />
+					<Route path="/cart" component={Cart} />
+					<Route path="/checkout" component={Checkout} />
+					<Route path="/orders" component={Orders} />
+					<Route path="/addresses" component={Addresses} />
+					<Route path="/about" component={About} />
+					<Route path="/contact" component={Contact} />
+					<Route path="/terms" component={Terms} />
+					<Route path="/privacy" component={Privacy} />
+					<Route path="/admin" component={Admin} />
+					<Route path="/admin/products" component={AdminProducts} />
+					<Route path="/admin/orders" component={AdminOrders} />
+					<Route path="/admin/support" component={AdminSupport} />
+					<Route component={NotFound} />
+				</Switch>
+			</main>
+			<Footer />
 		</div>
 	);
 }
 
 function App() {
+	const errorContext = useErrorProvider();
+
 	return (
 		<QueryClientProvider client={queryClient}>
 			<TooltipProvider>
-				<Toaster />
-				<Router />
+				<ErrorContext.Provider value={errorContext}>
+					<div className="min-h-screen">
+						<ErrorBanner
+							error={errorContext.error}
+							onDismiss={errorContext.clearError}
+						/>
+						<Router>
+						</Router>
+						<Toaster />
+					</div>
+				</ErrorContext.Provider>
 			</TooltipProvider>
 		</QueryClientProvider>
 	);

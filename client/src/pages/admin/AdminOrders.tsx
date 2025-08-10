@@ -18,20 +18,25 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart } from "lucide-react";
-import { useState } from "react";
+import { ShoppingCart, Filter, Search } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function AdminOrders() {
-	const { user } = useAuth();
+	const { user, isLoading: authLoading } = useAuth();
 	const { toast } = useToast();
 	const queryClient = useQueryClient();
 	const [trackingNumbers, setTrackingNumbers] = useState<
 		Record<string, string>
 	>({});
+	const [statusFilter, setStatusFilter] = useState<string>("all");
+	const [searchQuery, setSearchQuery] = useState<string>("");
+	const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+	const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
 	// Fetch orders
-	const { data: orders = [] } = useQuery<Order[]>({
-		queryKey: ["admin", "orders"],
+	const { data: orders = [], isLoading, error } = useQuery({
+		queryKey: ["/api/admin/orders"],
 		queryFn: async () => {
 			const response = await fetch("/api/admin/orders", {
 				headers: {
@@ -41,8 +46,44 @@ export default function AdminOrders() {
 				},
 			});
 			if (!response.ok) throw new Error("Failed to fetch orders");
-			return response.json();
+			const data = await response.json();
+
+			// Fetch user details for each order
+			const ordersWithUsers = await Promise.all(
+				data.map(async (order: any) => {
+					let customer = null;
+					if (order.userId) {
+						try {
+							const userResponse = await fetch(`/api/admin/users/${order.userId}`, {
+								headers: {
+									Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
+								},
+							});
+							if (userResponse.ok) {
+								customer = await userResponse.json();
+							}
+						} catch (error) {
+							console.log("Could not fetch user details:", error);
+						}
+					}
+
+					return {
+						...order,
+						shippingAddress: order.shippingAddress || {},
+						customer: customer || {
+							firstName: "Unknown",
+							lastName: "Customer",
+							email: "N/A"
+						},
+						items: order.items || [],
+						totalAmount: order.totalAmount || order.total || 0
+					};
+				})
+			);
+
+			return ordersWithUsers;
 		},
+		enabled: !!user?.isAdmin,
 	});
 
 	// Update order status mutation
@@ -104,6 +145,36 @@ export default function AdminOrders() {
 		}));
 	};
 
+	// Filter orders based on status and search query
+	const filteredOrders = useMemo(() => {
+		return orders.filter((order) => {
+			const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+			const matchesSearch = searchQuery === "" || 
+				order.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				order.shippingAddress?.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				order.shippingAddress?.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				order.shippingAddress?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				order.customer?.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				order.customer?.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				order.customer?.email?.toLowerCase().includes(searchQuery.toLowerCase());
+			return matchesStatus && matchesSearch;
+		});
+	}, [orders, statusFilter, searchQuery]);
+
+	const openOrderDetails = (order: Order) => {
+		setSelectedOrder(order);
+		setIsOrderModalOpen(true);
+	};
+
+	// Show loading while auth is loading
+	if (authLoading) {
+		return (
+			<div className="flex items-center justify-center min-h-screen">
+				<div className="animate-spin rounded-full h-32 w-32 border-b-2 border-craft-brown"></div>
+			</div>
+		);
+	}
+
 	// Only render admin content if user is an admin
 	if (!user || !user.isAdmin) {
 		return (
@@ -120,8 +191,37 @@ export default function AdminOrders() {
 				<h1 className="text-3xl font-bold">Orders Management</h1>
 			</div>
 
+			{/* Filters */}
+			<div className="flex flex-col sm:flex-row gap-4 mb-6">
+				<div className="flex items-center gap-2 flex-1">
+					<Search className="h-4 w-4 text-gray-500" />
+					<Input
+						placeholder="Search by order ID, customer name, or email..."
+						value={searchQuery}
+						onChange={(e) => setSearchQuery(e.target.value)}
+						className="flex-1"
+					/>
+				</div>
+				<div className="flex items-center gap-2">
+					<Filter className="h-4 w-4 text-gray-500" />
+					<Select value={statusFilter} onValueChange={setStatusFilter}>
+						<SelectTrigger className="w-[180px]">
+							<SelectValue placeholder="Filter by status" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="all">All Orders</SelectItem>
+							<SelectItem value="pending">Pending</SelectItem>
+							<SelectItem value="processing">Processing</SelectItem>
+							<SelectItem value="shipped">Shipped</SelectItem>
+							<SelectItem value="delivered">Delivered</SelectItem>
+							<SelectItem value="cancelled">Cancelled</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+			</div>
+
 			<div className="grid gap-6">
-				{orders.length === 0 ? (
+				{filteredOrders.length === 0 ? (
 					<Card>
 						<CardContent className="p-6">
 							<p className="text-center text-gray-500">
@@ -130,12 +230,15 @@ export default function AdminOrders() {
 						</CardContent>
 					</Card>
 				) : (
-					orders.map((order) => (
+					filteredOrders.map((order) => (
 						<Card key={order.id}>
 							<CardHeader>
 								<div className="flex justify-between items-start">
 									<div>
-										<CardTitle>
+										<CardTitle 
+											className="cursor-pointer hover:text-craft-brown"
+											onClick={() => openOrderDetails(order)}
+										>
 											Order #{order.id.substring(0, 8)}
 										</CardTitle>
 										<CardDescription>
@@ -146,7 +249,7 @@ export default function AdminOrders() {
 									</div>
 									<div className="text-right">
 										<p className="text-lg font-semibold">
-											₹{order.total}
+											₹{order.totalAmount || order.total || 0}
 										</p>
 										<p
 											className={`text-sm px-2 py-1 rounded ${
@@ -171,24 +274,21 @@ export default function AdminOrders() {
 											Customer Details
 										</h4>
 										<p className="text-sm">
-											{order.shippingAddress.firstName}{" "}
-											{order.shippingAddress.lastName}
+											{order.shippingAddress?.firstName || 'N/A'}{" "}
+											{order.shippingAddress?.lastName || ''}
 										</p>
 										<p className="text-sm text-gray-600">
-											{
-												order.shippingAddress
-													.streetAddress
-											}
+											{order.shippingAddress?.streetAddress || 'No address'}
 										</p>
 										<p className="text-sm text-gray-600">
-											{order.shippingAddress.city},{" "}
-											{order.shippingAddress.state}{" "}
-											{order.shippingAddress.zipCode}
+											{order.shippingAddress?.city || ''},{" "}
+											{order.shippingAddress?.state || ''}{" "}
+											{order.shippingAddress?.zipCode || ''}
 										</p>
 										<p className="text-sm text-gray-600">
-											{order.shippingAddress.country}
+											{order.shippingAddress?.country || ''}
 										</p>
-										{order.shippingAddress.phone && (
+										{order.shippingAddress?.phone && (
 											<p className="text-sm text-gray-600">
 												Phone:{" "}
 												{order.shippingAddress.phone}
@@ -289,6 +389,112 @@ export default function AdminOrders() {
 					))
 				)}
 			</div>
+
+			{/* Order Details Modal */}
+			<Dialog open={isOrderModalOpen} onOpenChange={setIsOrderModalOpen}>
+				<DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle>
+							Order Details - #{selectedOrder?.id.substring(0, 8)}
+						</DialogTitle>
+					</DialogHeader>
+					{selectedOrder && (
+						<div className="space-y-6">
+							{/* Customer Details */}
+							<div className="bg-gray-50 rounded-lg p-4">
+								<h4 className="font-semibold text-gray-900 mb-3">Customer Information</h4>
+								<div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+									<div>
+										<p className="text-gray-600">Name</p>
+										<p className="font-medium">
+											{selectedOrder.customer?.firstName || selectedOrder.shippingAddress?.firstName || 'N/A'}{" "}
+											{selectedOrder.customer?.lastName || selectedOrder.shippingAddress?.lastName || ''}
+										</p>
+									</div>
+									<div>
+										<p className="text-gray-600">Email</p>
+										<p className="font-medium">
+											{selectedOrder.customer?.email || selectedOrder.shippingAddress?.email || 'Not provided'}
+										</p>
+									</div>
+									<div>
+										<p className="text-gray-600">Phone</p>
+										<p className="font-medium">
+											{selectedOrder.customer?.phone || selectedOrder.shippingAddress?.phone || 'Not provided'}
+										</p>
+									</div>
+								</div>
+							</div>
+
+							{/* Order Summary */}
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+								<div>
+									<h4 className="font-semibold mb-3">Order Information</h4>
+									<div className="space-y-2 text-sm">
+										<p><span className="font-medium">Order ID:</span> {selectedOrder.id}</p>
+										<p><span className="font-medium">Date:</span> {new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
+										<p><span className="font-medium">Status:</span> <span className={`px-2 py-1 rounded text-sm ${selectedOrder.status === "delivered" ? "bg-green-100 text-green-800" : selectedOrder.status === "shipped" ? "bg-blue-100 text-blue-800" : selectedOrder.status === "processing" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-800"}`}>{selectedOrder.status.toUpperCase()}</span></p>
+										{selectedOrder.trackingNumber && (
+											<p><span className="font-medium">Tracking:</span> {selectedOrder.trackingNumber}</p>
+										)}
+									</div>
+								</div>
+
+								{/* Payment Details */}
+								<div>
+									<h4 className="font-semibold mb-3">Payment Information</h4>
+									<div className="space-y-2 text-sm">
+										<p><span className="font-medium">Payment Method:</span> {selectedOrder.paymentMethod || 'Not specified'}</p>
+										<p><span className="font-medium">Total Amount:</span> ₹{selectedOrder.totalAmount || selectedOrder.total || 0}</p>
+										<p><span className="font-medium">Currency:</span> {selectedOrder.currency || 'INR'}</p>
+									</div>
+								</div>
+							</div>
+
+							{/* Shipping Address */}
+							<div>
+								<h4 className="font-semibold mb-3">Shipping Address</h4>
+								<div className="bg-gray-50 p-4 rounded-lg text-sm">
+									<p className="font-medium">{selectedOrder.shippingAddress?.firstName || 'N/A'} {selectedOrder.shippingAddress?.lastName || ''}</p>
+									<p>{selectedOrder.shippingAddress?.streetAddress || 'No address provided'}</p>
+									<p>{selectedOrder.shippingAddress?.city || ''}{selectedOrder.shippingAddress?.city && selectedOrder.shippingAddress?.state ? ', ' : ''}{selectedOrder.shippingAddress?.state || ''} {selectedOrder.shippingAddress?.zipCode || ''}</p>
+									<p>{selectedOrder.shippingAddress?.country || ''}</p>
+									{selectedOrder.shippingAddress?.phone && (
+										<p className="mt-1">Phone: {selectedOrder.shippingAddress.phone}</p>
+									)}
+								</div>
+							</div>
+
+							{/* Order Items */}
+							<div>
+								<h4 className="font-semibold mb-3">Order Items</h4>
+								<div className="space-y-3">
+									{selectedOrder.items.map((item, index) => (
+										<div key={index} className="flex justify-between items-center p-3 border rounded-lg">
+											<div className="flex-1">
+												<p className="font-medium">{item.productName}</p>
+												<p className="text-sm text-gray-600">Product ID: {item.productId}</p>
+												<p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+											</div>
+											<div className="text-right">
+												<p className="font-medium">₹{item.price}</p>
+												<p className="text-sm text-gray-600">each</p>
+												<p className="text-sm font-medium">Total: ₹{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
+											</div>
+										</div>
+									))}
+									<div className="border-t pt-3 mt-3">
+										<div className="flex justify-between items-center font-semibold text-lg">
+											<span>Order Total:</span>
+											<span>₹{selectedOrder.totalAmount || selectedOrder.total || 0}</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

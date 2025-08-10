@@ -5,50 +5,20 @@ import { ShoppingBag, Plus, Minus, X } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useAuth } from "@/hooks/useAuth";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
 export default function Cart() {
   const { cartItems, totalAmount, updateCart, removeFromCart } = useCart();
   const { formatPrice } = useCurrency();
   const { isAuthenticated } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-
-  const checkoutMutation = useMutation({
-    mutationFn: async () => {
-      const orderItems = cartItems.map((item: any) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        price: parseFloat(item.product.discountedPrice || item.product.originalPrice),
-      }));
-
-      return apiRequest("POST", "/api/orders", {
-        items: orderItems,
-        totalAmount: totalAmount.toString(),
-        currency: "INR",
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      toast({ title: "Order placed successfully!", description: "Thank you for your purchase." });
-      setLocation("/orders");
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to place order", variant: "destructive" });
-    },
-  });
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
       setLocation("/login");
       return;
     }
-    checkoutMutation.mutate();
+    setLocation("/checkout");
   };
 
   if (cartItems.length === 0) {
@@ -89,7 +59,7 @@ export default function Cart() {
                         className="w-24 h-24 object-cover rounded cursor-pointer hover:opacity-75 transition-opacity"
                       />
                     </Link>
-                    
+
                     <div className="flex-1">
                       <Link href={`/product/${item.product.id}`}>
                         <h3 className="font-semibold text-gray-900 hover:text-craft-brown cursor-pointer">
@@ -98,7 +68,7 @@ export default function Cart() {
                       </Link>
                       <p className="text-sm text-gray-600">{item.product.material}</p>
                       <p className="text-sm text-gray-500">From {item.product.countryOfOrigin}</p>
-                      
+
                       <div className="flex items-center justify-between mt-4">
                         <div className="flex items-center space-x-2">
                           <span className="text-lg font-bold text-craft-brown">
@@ -110,7 +80,7 @@ export default function Cart() {
                             </span>
                           )}
                         </div>
-                        
+
                         <div className="flex items-center space-x-2">
                           <Button
                             onClick={() => updateCart({ id: item.id, quantity: Math.max(1, item.quantity - 1) })}
@@ -157,27 +127,26 @@ export default function Cart() {
                   <span>Subtotal ({cartItems.reduce((sum: number, item: any) => sum + item.quantity, 0)} items)</span>
                   <span className="font-semibold">{formatPrice(totalAmount)}</span>
                 </div>
-                
+
                 <div className="flex justify-between items-center">
                   <span>Shipping</span>
                   <span className="text-craft-green font-semibold">Free</span>
                 </div>
-                
+
                 <hr />
-                
+
                 <div className="flex justify-between items-center text-lg font-bold">
                   <span>Total</span>
                   <span className="text-craft-brown">{formatPrice(totalAmount)}</span>
                 </div>
-                
+
                 <Button
                   onClick={handleCheckout}
-                  disabled={checkoutMutation.isPending}
                   className="w-full bg-craft-brown hover:bg-craft-brown/90"
                 >
-                  {checkoutMutation.isPending ? "Processing..." : "Proceed to Checkout"}
+                  Proceed to Checkout
                 </Button>
-                
+
                 <Link href="/">
                   <Button variant="outline" className="w-full">
                     Continue Shopping

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { User, ShoppingCart, Menu, X, ChevronDown, Package, MessageSquare } from "lucide-react";
+import { User, ShoppingCart, Menu, X, ChevronDown, Package, MessageSquare, MapPin, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
@@ -11,6 +11,7 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -64,12 +65,35 @@ export default function Header() {
 
 							{isAuthenticated ? (
 								<div className="flex items-center space-x-4">
-									<span className="text-sm text-gray-700">
-										Hello, {user?.firstName}
-									</span>
-									<Button asChild variant="ghost" size="sm">
-										<Link to="/orders">Orders</Link>
-									</Button>
+									<DropdownMenu>
+										<DropdownMenuTrigger asChild>
+											<Button variant="ghost" className="flex items-center gap-2">
+												<User className="h-4 w-4" />
+												<span className="hidden sm:inline">Hello, {user?.firstName}</span>
+												<ChevronDown className="h-4 w-4" />
+											</Button>
+										</DropdownMenuTrigger>
+										<DropdownMenuContent align="end" className="w-56">
+											<DropdownMenuItem asChild>
+												<Link href="/orders" className="flex items-center gap-2 w-full">
+													<Package className="h-4 w-4" />
+													My Orders
+												</Link>
+											</DropdownMenuItem>
+											<DropdownMenuItem asChild>
+												<Link href="/addresses" className="flex items-center gap-2 w-full">
+													<MapPin className="h-4 w-4" />
+													My Addresses
+												</Link>
+											</DropdownMenuItem>
+											<DropdownMenuSeparator />
+											<DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2">
+												<LogOut className="h-4 w-4" />
+												Logout
+											</DropdownMenuItem>
+										</DropdownMenuContent>
+									</DropdownMenu>
+									
 									{user?.isAdmin && (
 										<DropdownMenu>
 											<DropdownMenuTrigger asChild>
@@ -100,12 +124,6 @@ export default function Header() {
 											</DropdownMenuContent>
 										</DropdownMenu>
 									)}
-									<Button
-										onClick={handleLogout}
-										variant="ghost"
-										size="sm">
-										Logout
-									</Button>
 								</div>
 							) : (
 								<Link href="/login">
@@ -168,7 +186,16 @@ export default function Header() {
 											<Button
 												variant="ghost"
 												className="justify-start w-full">
-												Orders
+												<Package className="h-4 w-4 mr-2" />
+												My Orders
+											</Button>
+										</Link>
+										<Link href="/addresses">
+											<Button
+												variant="ghost"
+												className="justify-start w-full">
+												<MapPin className="h-4 w-4 mr-2" />
+												My Addresses
 											</Button>
 										</Link>
 										{user?.isAdmin && (
@@ -180,6 +207,7 @@ export default function Header() {
 													<Button
 														variant="ghost"
 														className="justify-start w-full pl-4">
+														<Package className="h-4 w-4 mr-2" />
 														Products
 													</Button>
 												</Link>
@@ -187,6 +215,7 @@ export default function Header() {
 													<Button
 														variant="ghost"
 														className="justify-start w-full pl-4">
+														<ShoppingCart className="h-4 w-4 mr-2" />
 														Orders
 													</Button>
 												</Link>
@@ -194,6 +223,7 @@ export default function Header() {
 													<Button
 														variant="ghost"
 														className="justify-start w-full pl-4">
+														<MessageSquare className="h-4 w-4 mr-2" />
 														Support
 													</Button>
 												</Link>
@@ -203,6 +233,7 @@ export default function Header() {
 											onClick={handleLogout}
 											variant="ghost"
 											className="justify-start w-full">
+											<LogOut className="h-4 w-4 mr-2" />
 											Logout
 										</Button>
 									</>

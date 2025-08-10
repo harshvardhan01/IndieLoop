@@ -1,21 +1,30 @@
-import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Package, Truck, CheckCircle, Clock, ArrowLeft } from "lucide-react";
+import { Package, Truck, CheckCircle, Clock, ArrowLeft, Eye, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import type { Order } from "@shared/schema";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 
 export default function Orders() {
-	const { isAuthenticated, isLoading: authLoading } = useAuth();
+	const { isAuthenticated, isLoading: authLoading, user } = useAuth();
 	const { formatPrice } = useCurrency();
 	const { toast } = useToast();
 	const [, setLocation] = useLocation();
+	const queryClient = useQueryClient();
+	const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
 	// Redirect to login if not authenticated
 	useEffect(() => {
@@ -94,6 +103,37 @@ export default function Orders() {
 		},
 	});
 
+	const cancelOrderMutation = useMutation({
+		mutationFn: async (orderId: string) => {
+			const response = await fetch(`/api/orders/${orderId}/cancel`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${sessionId}`,
+				},
+			});
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.message || "Failed to cancel order");
+			}
+			return response.json();
+		},
+		onSuccess: () => {
+			toast({
+				title: "Order Cancelled",
+				description: "Your order has been successfully cancelled.",
+			});
+			queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+		},
+		onError: (error) => {
+			toast({
+				title: "Error Cancelling Order",
+				description: error.message,
+				variant: "destructive",
+			});
+		},
+	});
+
 	// Handle unauthorized error
 	useEffect(() => {
 		if (error && isUnauthorizedError(error)) {
@@ -136,6 +176,18 @@ export default function Orders() {
 			default:
 				return "bg-gray-100 text-gray-800";
 		}
+	};
+
+	const openOrderDetails = (order: Order) => {
+		setSelectedOrder(order);
+	};
+
+	const closeOrderDetails = () => {
+		setSelectedOrder(null);
+	};
+
+	const handleCancelOrder = (orderId: string) => {
+		cancelOrderMutation.mutate(orderId);
 	};
 
 	if (authLoading || isLoading) {
@@ -227,6 +279,36 @@ export default function Orders() {
 													.toUpperCase() +
 													order.status.slice(1)}
 											</Badge>
+											<div className="flex gap-2 mt-3">
+												<Button
+													size="sm"
+													variant="outline"
+													onClick={() =>
+														openOrderDetails(order)
+													}>
+													<Eye className="h-3 w-3 mr-1" />
+													Details
+												</Button>
+												{(order.status ===
+													"pending" ||
+													order.status ===
+														"processing") && (
+													<Button
+														size="sm"
+														variant="destructive"
+														onClick={() =>
+															handleCancelOrder(
+																order.id
+															)
+														}
+														disabled={
+															cancelOrderMutation.isPending
+														}>
+														<X className="h-3 w-3 mr-1" />
+														Cancel
+													</Button>
+												)}
+											</div>
 										</div>
 									</div>
 								</CardHeader>
@@ -500,6 +582,169 @@ export default function Orders() {
 					</div>
 				)}
 			</div>
+
+			<Dialog open={!!selectedOrder} onOpenChange={closeOrderDetails}>
+				<DialogContent className="max-w-4xl">
+					<DialogHeader>
+						<DialogTitle>
+							Order Details #
+							{selectedOrder?.id.slice(-8).toUpperCase()}
+						</DialogTitle>
+					</DialogHeader>
+					{selectedOrder && (
+						<div className="space-y-6">
+							{/* Customer Details */}
+							<div className="bg-gray-50 rounded-lg p-4">
+								<h4 className="font-semibold text-gray-900 mb-3">
+									Customer Details
+								</h4>
+								<div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+									<div>
+										<p className="text-gray-600">Name</p>
+										<p className="font-medium">
+											{selectedOrder.customer?.firstName || selectedOrder.shippingAddress?.firstName || 'N/A'}{" "}
+											{selectedOrder.customer?.lastName || selectedOrder.shippingAddress?.lastName || ''}
+										</p>
+									</div>
+									<div>
+										<p className="text-gray-600">Email</p>
+										<p className="font-medium">
+											{selectedOrder.customer?.email || selectedOrder.shippingAddress?.email || 'Not provided'}
+										</p>
+									</div>
+									<div>
+										<p className="text-gray-600">Phone</p>
+										<p className="font-medium">
+											{selectedOrder.customer?.phone || selectedOrder.shippingAddress?.phone || 'Not provided'}
+										</p>
+									</div>
+									<div className="md:col-span-3">
+										<p className="text-gray-600">Address</p>
+										<p className="font-medium">
+											{selectedOrder.shippingAddress?.street || selectedOrder.shippingAddress?.streetAddress || 'No address'},{" "}
+											{selectedOrder.shippingAddress?.city || ''},{" "}
+											{selectedOrder.shippingAddress?.state || ''}{" "}
+											{selectedOrder.shippingAddress?.zipCode || ''},{" "}
+											{selectedOrder.shippingAddress?.country || ''}
+										</p>
+									</div>
+								</div>
+							</div>
+
+							{/* Order Summary */}
+							<div className="bg-gray-50 rounded-lg p-4">
+								<h4 className="font-semibold text-gray-900 mb-3 flex items-center justify-between">
+									<span>Order Summary</span>
+									<span className="text-xl font-bold text-craft-brown">
+										{formatPrice(
+											selectedOrder.totalAmount,
+											selectedOrder.currency
+										)}
+									</span>
+								</h4>
+								<div className="space-y-2">
+									{selectedOrder.items.map(
+										(item, index) => (
+											<div
+												key={index}
+												className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+												<div className="flex items-center flex-1">
+													{item.product && (
+														<img
+															src={
+																item.product
+																	.imageUrl
+															}
+															alt={
+																item.product
+																	.name
+															}
+															className="w-16 h-16 object-cover rounded mr-4"
+														/>
+													)}
+													<div className="flex-1">
+														<div className="font-medium text-gray-900">
+															{
+																item.product
+																	?.name ??
+																	`Product ID: ${item.productId.slice(
+																		-8
+																	)}`
+															}
+														</div>
+														<div className="text-sm text-gray-600">
+															Qty: {item.quantity}
+														</div>
+													</div>
+												</div>
+												<div className="text-right ml-4">
+													<div className="font-medium">
+														{formatPrice(
+															item.price,
+															selectedOrder.currency
+														)}
+													</div>
+													<div className="text-sm text-gray-600">
+														each
+													</div>
+												</div>
+											</div>
+										)
+									)}
+								</div>
+							</div>
+
+							{/* Payment and Status */}
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<div className="bg-gray-50 rounded-lg p-4">
+									<h4 className="font-semibold text-gray-900 mb-3">
+										Payment Method
+									</h4>
+									<p className="font-medium capitalize">
+										{selectedOrder.paymentMethod}
+									</p>
+								</div>
+								<div className="bg-gray-50 rounded-lg p-4">
+									<h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+										<Clock className="h-4 w-4 mr-2" />
+										Order Status
+									</h4>
+									<Badge
+										className={`${getStatusColor(
+											selectedOrder.status
+										)} text-lg flex items-center gap-1`}>
+										{getStatusIcon(selectedOrder.status)}
+										{selectedOrder.status
+											.charAt(0)
+											.toUpperCase() +
+											selectedOrder.status.slice(1)}
+									</Badge>
+								</div>
+							</div>
+							{selectedOrder.trackingNumber && (
+								<div className="bg-gray-50 rounded-lg p-4">
+									<h4 className="font-semibold text-gray-900 mb-2 flex items-center">
+										<Truck className="h-4 w-4 mr-2" />
+										Tracking Information
+									</h4>
+									<div className="text-sm">
+										<span className="text-gray-600">
+											Tracking Number:{" "}
+										</span>
+										<span className="font-mono font-medium">
+											{selectedOrder.trackingNumber}
+										</span>
+									</div>
+									<p className="text-xs text-gray-500 mt-1">
+										Use this tracking number to monitor
+										your shipment progress
+									</p>
+								</div>
+							)}
+						</div>
+					)}
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

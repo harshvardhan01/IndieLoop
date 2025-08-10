@@ -94,6 +94,23 @@ export const supportMessages = pgTable("support_messages", {
 	createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const addresses = pgTable("addresses", {
+	id: varchar("id")
+		.primaryKey()
+		.default(sql`gen_random_uuid()`),
+	userId: varchar("user_id").notNull(),
+	firstName: text("first_name").notNull(),
+	lastName: text("last_name").notNull(),
+	streetAddress: text("street_address").notNull(),
+	city: text("city").notNull(),
+	state: text("state").notNull(),
+	zipCode: text("zip_code").notNull(),
+	country: text("country").notNull(),
+	phone: text("phone"),
+	isDefault: boolean("is_default").default(false),
+	createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
 	id: true,
@@ -118,6 +135,10 @@ export const insertCartItemSchema = createInsertSchema(cartItems).omit({
 export const insertSupportMessageSchema = createInsertSchema(
 	supportMessages
 ).omit({ id: true, createdAt: true });
+export const insertAddressSchema = createInsertSchema(addresses).omit({
+	id: true,
+	createdAt: true,
+});
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -132,6 +153,8 @@ export type CartItem = typeof cartItems.$inferSelect;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
 export type SupportMessage = typeof supportMessages.$inferSelect;
 export type InsertSupportMessage = z.infer<typeof insertSupportMessageSchema>;
+export type Address = typeof addresses.$inferSelect;
+export type InsertAddress = z.infer<typeof insertAddressSchema>;
 
 // Auth schemas
 export const loginSchema = z.object({

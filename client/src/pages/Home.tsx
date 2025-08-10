@@ -9,7 +9,8 @@ export default function Home() {
 		queryKey: ["featured-products"],
 		queryFn: async () => {
 			const response = await fetch("/api/products/featured");
-			if (!response.ok) throw new Error("Failed to fetch featured products");
+			if (!response.ok)
+				throw new Error("Failed to fetch featured products");
 			return response.json();
 		},
 	});
@@ -44,7 +45,8 @@ export default function Home() {
 							Featured Products
 						</h3>
 						<p className="text-gray-600 max-w-2xl mx-auto">
-							Handpicked by our team - discover the finest artisan creations from around the world.
+							Handpicked by our team - discover the finest artisan
+							creations from around the world.
 						</p>
 					</div>
 
@@ -54,8 +56,12 @@ export default function Home() {
 						</div>
 					) : featuredProducts.length === 0 ? (
 						<div className="text-center py-12">
-							<h4 className="text-lg font-medium text-gray-900 mb-2">No featured products yet</h4>
-							<p className="text-gray-600 mb-6">Our team is curating the best products for you.</p>
+							<h4 className="text-lg font-medium text-gray-900 mb-2">
+								No featured products yet
+							</h4>
+							<p className="text-gray-600 mb-6">
+								Our team is curating the best products for you.
+							</p>
 							<Link href="/collections">
 								<Button className="bg-craft-brown hover:bg-craft-brown/90">
 									Browse All Products
@@ -66,7 +72,11 @@ export default function Home() {
 						<>
 							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
 								{featuredProducts.map((product) => (
-									<ProductCard key={product.id} product={product} viewMode="grid" />
+									<ProductCard
+										key={product.id}
+										product={product}
+										viewMode="grid"
+									/>
 								))}
 							</div>
 							<div className="text-center">
@@ -138,122 +148,6 @@ export default function Home() {
 					</div>
 				</div>
 			</section>
-
-			{/* Footer */}
-			<footer className="bg-craft-brown text-white">
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-					<div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-						<div>
-							<h3 className="text-2xl font-display font-bold mb-4">
-								IndieLoop
-							</h3>
-							<p className="text-craft-tan">
-								Connecting you with authentic, handcrafted
-								products from artisans worldwide.
-							</p>
-						</div>
-						<div>
-							<h4 className="font-semibold mb-4">Quick Links</h4>
-							<ul className="space-y-2 text-craft-tan">
-								<li>
-									<Link
-										href="/about"
-										className="hover:text-white transition-colors">
-										About Us
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="/collections"
-										className="hover:text-white transition-colors">
-										Collections
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="/contact"
-										className="hover:text-white transition-colors">
-										Contact Us
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="/terms"
-										className="hover:text-white transition-colors">
-										Terms of Service
-									</Link>
-								</li>
-							</ul>
-						</div>
-						<div>
-							<h4 className="font-semibold mb-4">
-								Customer Care
-							</h4>
-							<ul className="space-y-2 text-craft-tan">
-								<li>
-									<Link
-										href="/contact"
-										className="hover:text-white transition-colors">
-										Contact Support
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="/privacy"
-										className="hover:text-white transition-colors">
-										Privacy Policy
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="/orders"
-										className="hover:text-white transition-colors">
-										Track Order
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="/cart"
-										className="hover:text-white transition-colors">
-										View Cart
-									</Link>
-								</li>
-							</ul>
-						</div>
-						<div>
-							<h4 className="font-semibold mb-4">Follow Us</h4>
-							<div className="flex space-x-4">
-								<a
-									href="#"
-									className="text-craft-tan hover:text-white transition-colors">
-									<span className="text-xl">📷</span>
-								</a>
-								<a
-									href="#"
-									className="text-craft-tan hover:text-white transition-colors">
-									<span className="text-xl">📘</span>
-								</a>
-								<a
-									href="#"
-									className="text-craft-tan hover:text-white transition-colors">
-									<span className="text-xl">🐦</span>
-								</a>
-								<a
-									href="#"
-									className="text-craft-tan hover:text-white transition-colors">
-									<span className="text-xl">📌</span>
-								</a>
-							</div>
-						</div>
-					</div>
-					<div className="border-t border-craft-tan mt-8 pt-8 text-center text-craft-tan">
-						<p>
-							&copy; 2024 IndieLoop. All rights reserved.
-							Supporting artisans worldwide.
-						</p>
-					</div>
-				</div>
-			</footer>
 		</div>
 	);
 }
