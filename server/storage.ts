@@ -109,11 +109,12 @@ export class MemStorage implements IStorage {
 				description: "Beautiful handwoven silk scarf with traditional patterns",
 				originalPrice: "2500",
 				discountedPrice: "2000",
-				material: "Textile",
+				category: "Textiles",
+				material: "Silk",
 				countryOfOrigin: "India",
 				images: ["https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=400"],
-				dimensions: "180cm x 70cm",
-				weight: "150g",
+				dimensions: { length: 71, width: 28, unit: "inch" as const },
+				weight: { value: 150, unit: "g" as const },
 				inStock: true,
 				featured: true,
 			},
@@ -122,11 +123,12 @@ export class MemStorage implements IStorage {
 				description: "Artisan crafted wooden bowl perfect for serving",
 				originalPrice: "1500",
 				discountedPrice: "1200",
+				category: "Home & Kitchen",
 				material: "Wood",
 				countryOfOrigin: "India",
 				images: ["https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"],
-				dimensions: "25cm diameter",
-				weight: "400g",
+				dimensions: { length: 10, width: 10, height: 4, unit: "inch" as const },
+				weight: { value: 400, unit: "g" as const },
 				inStock: true,
 				featured: false,
 			},
@@ -135,11 +137,12 @@ export class MemStorage implements IStorage {
 				description: "Hand-painted ceramic plates with floral motifs",
 				originalPrice: "3000",
 				discountedPrice: "2400",
+				category: "Home & Kitchen",
 				material: "Ceramic",
 				countryOfOrigin: "India",
 				images: ["https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"],
-				dimensions: "26cm diameter",
-				weight: "800g",
+				dimensions: { length: 10, width: 10, height: 1, unit: "inch" as const },
+				weight: { value: 800, unit: "g" as const },
 				inStock: true,
 				featured: true,
 			},
@@ -148,9 +151,12 @@ export class MemStorage implements IStorage {
 				description: "Premium leather wallet with hand-stitched details",
 				originalPrice: "1800",
 				discountedPrice: "1440",
+				category: "Accessories",
 				material: "Leather",
 				countryOfOrigin: "India",
 				images: ["https://images.unsplash.com/photo-1627123424574-724758594e93?w=400"],
+				dimensions: { length: 4, width: 3, height: 1, unit: "inch" as const },
+				weight: { value: 100, unit: "g" as const },
 				inStock: true,
 				featured: false,
 			},
@@ -158,11 +164,12 @@ export class MemStorage implements IStorage {
 				name: "Bamboo Storage Basket",
 				description: "Eco-friendly bamboo basket for storage",
 				originalPrice: "1200",
+				category: "Home & Kitchen",
 				material: "Bamboo",
 				countryOfOrigin: "India",
 				images: ["https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400"],
-				dimensions: "30cm x 20cm",
-				weight: "300g",
+				dimensions: { length: 12, width: 8, height: 6, unit: "inch" as const },
+				weight: { value: 300, unit: "g" as const },
 				inStock: true,
 				featured: false,
 			}
@@ -223,8 +230,23 @@ export class MemStorage implements IStorage {
 	async getProducts(filters: {
 		country?: string;
 		material?: string;
+		category?: string;
+		search?: string;
 	} = {}): Promise<Product[]> {
 		let products = Array.from(this.products.values());
+
+		// Search functionality - search in name, description, category, and material
+		if (filters?.search) {
+			const searchTerm = filters.search.toLowerCase().trim();
+			products = products.filter(
+				(p) =>
+					p.name.toLowerCase().includes(searchTerm) ||
+					p.description.toLowerCase().includes(searchTerm) ||
+					p.category.toLowerCase().includes(searchTerm) ||
+					p.material.toLowerCase().includes(searchTerm) ||
+					p.countryOfOrigin.toLowerCase().includes(searchTerm)
+			);
+		}
 
 		if (filters?.country) {
 			products = products.filter(
@@ -238,6 +260,13 @@ export class MemStorage implements IStorage {
 			products = products.filter(
 				(p) =>
 					p.material.toLowerCase() === filters.material!.toLowerCase()
+			);
+		}
+
+		if (filters?.category) {
+			products = products.filter(
+				(p) =>
+					p.category.toLowerCase() === filters.category!.toLowerCase()
 			);
 		}
 
@@ -347,7 +376,7 @@ export class MemStorage implements IStorage {
 			id,
 			currency: insertOrder.currency || "INR",
 			status: insertOrder.status || "pending",
-			trackingNumber: `TRK${Date.now()}`,
+			trackingNumber: undefined,
 			createdAt: new Date(),
 		};
 		this.orders.set(id, order);

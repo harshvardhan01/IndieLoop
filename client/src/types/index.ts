@@ -52,11 +52,20 @@ export interface Product {
 	description: string;
 	originalPrice: string;
 	discountedPrice?: string;
+	category: string;
 	material: string;
 	countryOfOrigin: string;
 	images: string[];
-	dimensions?: string;
-	weight?: string;
+	dimensions?: {
+		length?: number;
+		width?: number;
+		height?: number;
+		unit: "inch" | "cm";
+	};
+	weight?: {
+		value: number;
+		unit: "g" | "kg";
+	};
 	inStock: boolean;
 	featured: boolean;
 	createdAt: string;

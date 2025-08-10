@@ -19,11 +19,11 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import type { Order } from "@shared/schema";
 import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	Modal,
+	ModalContent,
+	ModalHeader,
+	ModalTitle,
+} from "@/components/ui/modal";
 import { Separator } from "@/components/ui/separator";
 
 export default function Orders() {
@@ -549,14 +549,14 @@ export default function Orders() {
 				)}
 			</div>
 
-			<Dialog open={!!selectedOrder} onOpenChange={closeOrderDetails}>
-				<DialogContent className="max-w-4xl">
-					<DialogHeader>
-						<DialogTitle>
+			<Modal open={!!selectedOrder} onOpenChange={closeOrderDetails}>
+				<ModalContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+					<ModalHeader>
+						<ModalTitle>
 							Order Details #
 							{selectedOrder?.id.slice(-8).toUpperCase()}
-						</DialogTitle>
-					</DialogHeader>
+						</ModalTitle>
+					</ModalHeader>
 					{selectedOrder && (
 						<div className="space-y-6">
 							{/* Customer Details */}
@@ -730,30 +730,39 @@ export default function Orders() {
 									</Badge>
 								</div>
 							</div>
-							{selectedOrder.trackingNumber && (
-								<div className="bg-gray-50 rounded-lg p-4">
-									<h4 className="font-semibold text-gray-900 mb-2 flex items-center">
-										<Truck className="h-4 w-4 mr-2" />
-										Tracking Information
-									</h4>
-									<div className="text-sm">
-										<span className="text-gray-600">
-											Tracking Number:{" "}
-										</span>
-										<span className="font-mono font-medium">
-											{selectedOrder.trackingNumber}
-										</span>
+							<div className="bg-gray-50 rounded-lg p-4">
+								<h4 className="font-semibold text-gray-900 mb-2 flex items-center">
+									<Truck className="h-4 w-4 mr-2" />
+									Tracking Information
+								</h4>
+								{selectedOrder.trackingNumber ? (
+									<div>
+										<div className="text-sm">
+											<span className="text-gray-600">
+												Tracking Number:{" "}
+											</span>
+											<span className="font-mono font-medium">
+												{selectedOrder.trackingNumber}
+											</span>
+										</div>
+										<p className="text-xs text-gray-500 mt-1">
+											Use this tracking number to monitor your
+											shipment progress
+										</p>
 									</div>
-									<p className="text-xs text-gray-500 mt-1">
-										Use this tracking number to monitor your
-										shipment progress
-									</p>
-								</div>
-							)}
+								) : (
+									<div className="text-sm text-gray-600">
+										{selectedOrder.status === "shipped" || selectedOrder.status === "delivered"
+											? "Tracking details will be updated shortly"
+											: "Tracking details will be shared once the order is shipped"
+										}
+									</div>
+								)}
+							</div>
 						</div>
 					)}
-				</DialogContent>
-			</Dialog>
+				</ModalContent>
+			</Modal>
 		</div>
 	);
 }

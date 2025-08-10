@@ -196,6 +196,21 @@ export const COUNTRIES = [
 	"Zimbabwe",
 ];
 
+export const CATEGORIES = [
+	"Textiles",
+	"Home & Kitchen",
+	"Accessories",
+	"Art & Decor",
+	"Jewelry",
+	"Bags & Purses",
+	"Furniture",
+	"Clothing",
+	"Toys & Games",
+	"Beauty & Personal Care",
+	"Electronics",
+	"Books & Stationery",
+];
+
 export const MATERIALS = [
 	"Wood",
 	"Ceramic",

@@ -175,10 +175,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 	// Product routes
 	app.get("/api/products", async (req, res) => {
 		try {
-			const { country, material } = req.query;
+			const { country, material, category, search } = req.query;
 			const products = await storage.getProducts({
 				country: country as string,
 				material: material as string,
+				category: category as string,
+				search: search as string,
 			});
 			res.json(products);
 		} catch (error) {
@@ -460,6 +462,15 @@ ${messageData.message}
 		}
 	});
 
+	app.get("/api/config/categories", async (req, res) => {
+		try {
+			const { CATEGORIES } = await import("./config/constants");
+			res.json(CATEGORIES);
+		} catch (error) {
+			res.status(500).json({ message: "Failed to fetch categories" });
+		}
+	});
+
 	// Admin routes - Product management
 	app.post("/api/admin/products", requireAdmin, async (req: any, res) => {
 		try {
@@ -542,7 +553,7 @@ ${messageData.message}
 	app.get("/api/admin/orders", requireAdmin, async (req: any, res) => {
 		try {
 			const orders = await storage.getAllOrders();
-			
+
 			// Enhance orders with user details
 			const ordersWithUsers = await Promise.all(
 				orders.map(async (order) => {
@@ -561,7 +572,7 @@ ${messageData.message}
 					}
 				})
 			);
-			
+
 			res.json(ordersWithUsers);
 		} catch (error) {
 			res.status(500).json({ message: "Failed to fetch orders" });

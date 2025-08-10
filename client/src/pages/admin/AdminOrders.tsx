@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ShoppingCart, Filter, Search } from "lucide-react";
 import { useState, useMemo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Modal, ModalContent, ModalHeader, ModalTitle } from "@/components/ui/modal";
 import { Link } from "wouter";
 
 export default function AdminOrders() {
@@ -431,13 +431,13 @@ export default function AdminOrders() {
 			</div>
 
 			{/* Order Details Modal */}
-			<Dialog open={isOrderModalOpen} onOpenChange={setIsOrderModalOpen}>
-				<DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-					<DialogHeader>
-						<DialogTitle>
+			<Modal open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+				<ModalContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+					<ModalHeader>
+						<ModalTitle>
 							Order Details - #{selectedOrder?.id.slice(-8).toUpperCase()}
-						</DialogTitle>
-					</DialogHeader>
+						</ModalTitle>
+					</ModalHeader>
 					{selectedOrder && (
 						<div className="space-y-6">
 							{/* Customer Details */}
@@ -558,8 +558,8 @@ export default function AdminOrders() {
 							</div>
 						</div>
 					)}
-				</DialogContent>
-			</Dialog>
+				</ModalContent>
+			</Modal>
 		</div>
 	);
 }

@@ -4,11 +4,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Modal, ModalContent, ModalHeader, ModalTitle, ModalTrigger } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Plus, Edit, Trash2, Home, Building } from "lucide-react";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 
 interface Address {
 	id: string;
@@ -55,6 +62,16 @@ export default function Addresses() {
 			if (!response.ok) {
 				throw new Error("Failed to fetch addresses");
 			}
+			return response.json();
+		},
+	});
+
+	// Fetch countries for dropdown
+	const { data: countries = [] } = useQuery<string[]>({
+		queryKey: ["config", "countries"],
+		queryFn: async () => {
+			const response = await fetch("/api/config/countries");
+			if (!response.ok) throw new Error("Failed to fetch countries");
 			return response.json();
 		},
 	});
@@ -173,19 +190,19 @@ export default function Addresses() {
 					<MapPin className="h-6 w-6" />
 					<h1 className="text-3xl font-bold">My Addresses</h1>
 				</div>
-				<Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
-					<DialogTrigger asChild>
+				<Modal open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
+					<ModalTrigger asChild>
 						<Button onClick={resetForm}>
 							<Plus className="h-4 w-4 mr-2" />
 							Add Address
 						</Button>
-					</DialogTrigger>
-					<DialogContent className="max-w-2xl">
-						<DialogHeader>
-							<DialogTitle>
+					</ModalTrigger>
+					<ModalContent className="max-w-2xl">
+						<ModalHeader>
+							<ModalTitle>
 								{editingAddress ? "Edit Address" : "Add New Address"}
-							</DialogTitle>
-						</DialogHeader>
+							</ModalTitle>
+						</ModalHeader>
 						<form onSubmit={handleSubmitAddress} className="space-y-4">
 							<div className="grid grid-cols-2 gap-4">
 								<div className="space-y-2">
@@ -281,17 +298,25 @@ export default function Addresses() {
 								</div>
 								<div className="space-y-2">
 									<Label htmlFor="country">Country</Label>
-									<Input
-										id="country"
+									<Select
 										value={addressForm.country}
-										onChange={(e) =>
+										onValueChange={(value) =>
 											setAddressForm((prev) => ({
 												...prev,
-												country: e.target.value,
+												country: value,
 											}))
-										}
-										required
-									/>
+										}>
+										<SelectTrigger>
+											<SelectValue placeholder="Select country" />
+										</SelectTrigger>
+										<SelectContent>
+											{countries.map((country) => (
+												<SelectItem key={country} value={country}>
+													{country}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
 								</div>
 							</div>
 
@@ -321,8 +346,8 @@ export default function Addresses() {
 								</Button>
 							</div>
 						</form>
-					</DialogContent>
-				</Dialog>
+					</ModalContent>
+				</Modal>
 			</div>
 
 			<div className="grid gap-6">

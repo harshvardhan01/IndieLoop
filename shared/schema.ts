@@ -36,11 +36,20 @@ export const products = pgTable("products", {
 		scale: 2,
 	}).notNull(),
 	discountedPrice: decimal("discounted_price", { precision: 10, scale: 2 }),
+	category: text("category").notNull(),
 	material: text("material").notNull(),
 	countryOfOrigin: text("country_of_origin").notNull(),
 	images: jsonb("images").$type<string[]>().notNull(),
-	dimensions: text("dimensions"),
-	weight: text("weight"),
+	dimensions: jsonb("dimensions").$type<{
+		length?: number;
+		width?: number;
+		height?: number;
+		unit: "inch" | "cm";
+	}>(),
+	weight: jsonb("weight").$type<{
+		value: number;
+		unit: "g" | "kg";
+	}>(),
 	inStock: boolean("in_stock").default(true),
 	featured: boolean("featured").default(false),
 	createdAt: timestamp("created_at").defaultNow(),

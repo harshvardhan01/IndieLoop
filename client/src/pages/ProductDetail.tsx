@@ -145,6 +145,14 @@ export default function ProductDetail() {
 								<div className="grid grid-cols-2 gap-4 text-sm">
 									<div>
 										<span className="text-gray-600">
+											Category:
+										</span>
+										<span className="ml-2 font-medium">
+											{product.category}
+										</span>
+									</div>
+									<div>
+										<span className="text-gray-600">
 											Material:
 										</span>
 										<span className="ml-2 font-medium">
@@ -173,7 +181,11 @@ export default function ProductDetail() {
 												Dimensions:
 											</span>
 											<span className="ml-2 font-medium">
-												{product.dimensions}
+												{[
+													product.dimensions.length && `L: ${product.dimensions.length}`,
+													product.dimensions.width && `W: ${product.dimensions.width}`,
+													product.dimensions.height && `H: ${product.dimensions.height}`
+												].filter(Boolean).join(", ")} {product.dimensions.unit}
 											</span>
 										</div>
 									)}
@@ -183,7 +195,7 @@ export default function ProductDetail() {
 												Weight:
 											</span>
 											<span className="ml-2 font-medium">
-												{product.weight}
+												{product.weight.value}{product.weight.unit}
 											</span>
 										</div>
 									)}

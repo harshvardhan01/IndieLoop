@@ -11,15 +11,15 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
+	Modal,
+	ModalContent,
+	ModalHeader,
+	ModalTitle,
+	ModalTrigger,
+} from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -49,6 +49,7 @@ export default function AdminProducts() {
 	const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 	const [searchQuery, setSearchQuery] = useState("");
+	const [categoryFilter, setCategoryFilter] = useState("all");
 	const [materialFilter, setMaterialFilter] = useState("all");
 	const [stockFilter, setStockFilter] = useState("all");
 
@@ -58,11 +59,20 @@ export default function AdminProducts() {
 		description: "",
 		originalPrice: "",
 		discountedPrice: "",
+		category: "",
 		material: "",
 		countryOfOrigin: "",
 		images: [""],
-		dimensions: "",
-		weight: "",
+		dimensions: {
+			length: "",
+			width: "",
+			height: "",
+			unit: "inch" as "inch" | "cm",
+		},
+		weight: {
+			value: "",
+			unit: "g" as "g" | "kg",
+		},
 		inStock: true,
 	});
 
@@ -80,6 +90,34 @@ export default function AdminProducts() {
 		},
 	});
 
+	// Fetch config data
+	const { data: categories = [] } = useQuery<string[]>({
+		queryKey: ["config", "categories"],
+		queryFn: async () => {
+			const response = await fetch("/api/config/categories");
+			if (!response.ok) throw new Error("Failed to fetch categories");
+			return response.json();
+		},
+	});
+
+	const { data: materials = [] } = useQuery<string[]>({
+		queryKey: ["config", "materials"],
+		queryFn: async () => {
+			const response = await fetch("/api/config/materials");
+			if (!response.ok) throw new Error("Failed to fetch materials");
+			return response.json();
+		},
+	});
+
+	const { data: countries = [] } = useQuery<string[]>({
+		queryKey: ["config", "countries"],
+		queryFn: async () => {
+			const response = await fetch("/api/config/countries");
+			if (!response.ok) throw new Error("Failed to fetch countries");
+			return response.json();
+		},
+	});
+
 	// Create product mutation
 	const createProductMutation = useMutation({
 		mutationFn: async (productData: any) => {
@@ -89,27 +127,27 @@ export default function AdminProducts() {
 					"Content-Type": "application/json",
 					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
 				},
-				body: JSON.stringify({
-					...productData,
-					images: productData.images.filter((img: string) => img.trim()),
-				}),
+				body: JSON.stringify(productData),
 			});
-			if (!response.ok) throw new Error("Failed to create product");
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.message || "Failed to create product");
+			}
 			return response.json();
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
-			setIsProductDialogOpen(false);
-			resetForm();
 			toast({
 				title: "Success",
 				description: "Product created successfully",
 			});
+			setIsProductDialogOpen(false);
+			resetForm();
 		},
-		onError: () => {
+		onError: (error: any) => {
 			toast({
 				title: "Error",
-				description: "Failed to create product",
+				description: error.message,
 				variant: "destructive",
 			});
 		},
@@ -117,34 +155,41 @@ export default function AdminProducts() {
 
 	// Update product mutation
 	const updateProductMutation = useMutation({
-		mutationFn: async ({ id, data }: { id: string; data: any }) => {
+		mutationFn: async ({
+			id,
+			productData,
+		}: {
+			id: string;
+			productData: any;
+		}) => {
 			const response = await fetch(`/api/admin/products/${id}`, {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
 					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
 				},
-				body: JSON.stringify({
-					...data,
-					images: data.images.filter((img: string) => img.trim()),
-				}),
+				body: JSON.stringify(productData),
 			});
-			if (!response.ok) throw new Error("Failed to update product");
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.message || "Failed to update product");
+			}
 			return response.json();
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
-			setIsProductDialogOpen(false);
-			resetForm();
 			toast({
 				title: "Success",
 				description: "Product updated successfully",
 			});
+			setIsProductDialogOpen(false);
+			setEditingProduct(null);
+			resetForm();
 		},
-		onError: () => {
+		onError: (error: any) => {
 			toast({
 				title: "Error",
-				description: "Failed to update product",
+				description: error.message,
 				variant: "destructive",
 			});
 		},
@@ -215,11 +260,20 @@ export default function AdminProducts() {
 			description: "",
 			originalPrice: "",
 			discountedPrice: "",
+			category: "",
 			material: "",
 			countryOfOrigin: "",
 			images: [""],
-			dimensions: "",
-			weight: "",
+			dimensions: {
+				length: "",
+				width: "",
+				height: "",
+				unit: "inch",
+			},
+			weight: {
+				value: "",
+				unit: "g",
+			},
 			inStock: true,
 		});
 		setEditingProduct(null);
@@ -228,30 +282,57 @@ export default function AdminProducts() {
 	const openEditProduct = (product: Product) => {
 		setEditingProduct(product);
 		setProductForm({
-			asin: product.asin,
+			asin: product.asin || "",
 			name: product.name,
 			description: product.description,
 			originalPrice: product.originalPrice,
 			discountedPrice: product.discountedPrice || "",
-			material: product.material,
-			countryOfOrigin: product.countryOfOrigin,
-			images: product.images.length ? product.images : [""],
-			dimensions: product.dimensions || "",
-			weight: product.weight || "",
-			inStock: product.inStock,
+			category: product.category || "",
+			material: product.material || "",
+			countryOfOrigin: product.countryOfOrigin || "",
+			images: product.images && product.images.length > 0 ? product.images : [""],
+			dimensions: {
+				length: product.dimensions?.length?.toString() || "",
+				width: product.dimensions?.width?.toString() || "",
+				height: product.dimensions?.height?.toString() || "",
+				unit: product.dimensions?.unit || "inch",
+			},
+			weight: {
+				value: product.weight?.value?.toString() || "",
+				unit: product.weight?.unit || "g",
+			},
+			inStock: product.inStock ?? true,
 		});
 		setIsProductDialogOpen(true);
 	};
 
-	const handleSubmitProduct = (e: React.FormEvent) => {
+	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
+
+		const productData = {
+			...productForm,
+			originalPrice: productForm.originalPrice,
+			discountedPrice: productForm.discountedPrice || null,
+			images: productForm.images.filter((img) => img.trim() !== ""),
+			dimensions: productForm.dimensions.length && productForm.dimensions.width ? {
+				length: parseFloat(productForm.dimensions.length) || 0,
+				width: parseFloat(productForm.dimensions.width) || 0,
+				height: parseFloat(productForm.dimensions.height) || 0,
+				unit: productForm.dimensions.unit,
+			} : null,
+			weight: productForm.weight.value ? {
+				value: parseFloat(productForm.weight.value) || 0,
+				unit: productForm.weight.unit,
+			} : null,
+		};
+
 		if (editingProduct) {
 			updateProductMutation.mutate({
 				id: editingProduct.id,
-				data: productForm,
+				productData,
 			});
 		} else {
-			createProductMutation.mutate(productForm);
+			createProductMutation.mutate(productData);
 		}
 	};
 
@@ -280,15 +361,17 @@ export default function AdminProducts() {
 				searchQuery === "" ||
 				product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
 				product.asin.toLowerCase().includes(searchQuery.toLowerCase());
+			const matchesCategory =
+				categoryFilter === "all" || product.category === categoryFilter;
 			const matchesMaterial =
 				materialFilter === "all" || product.material === materialFilter;
 			const matchesStock =
 				stockFilter === "all" ||
 				(stockFilter === "in-stock" && product.inStock) ||
 				(stockFilter === "out-of-stock" && !product.inStock);
-			return matchesSearch && matchesMaterial && matchesStock;
+			return matchesSearch && matchesCategory && matchesMaterial && matchesStock;
 		});
-	}, [products, searchQuery, materialFilter, stockFilter]);
+	}, [products, searchQuery, categoryFilter, materialFilter, stockFilter]);
 
 	// Only render admin content if user is an admin
 	if (!user || !user.isAdmin) {
@@ -323,23 +406,20 @@ export default function AdminProducts() {
 							<List className="h-4 w-4" />
 						</Button>
 					</div>
-					<Dialog
-						open={isProductDialogOpen}
-						onOpenChange={setIsProductDialogOpen}
-					>
-						<DialogTrigger asChild>
-							<Button onClick={() => resetForm()}>
+					<Modal open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
+						<ModalTrigger asChild>
+							<Button onClick={resetForm}>
 								<Plus className="h-4 w-4 mr-2" />
 								Add Product
 							</Button>
-						</DialogTrigger>
-						<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-							<DialogHeader>
-								<DialogTitle>
+						</ModalTrigger>
+						<ModalContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+							<ModalHeader>
+								<ModalTitle>
 									{editingProduct ? "Edit Product" : "Add New Product"}
-								</DialogTitle>
-							</DialogHeader>
-							<form onSubmit={handleSubmitProduct} className="space-y-4">
+								</ModalTitle>
+							</ModalHeader>
+							<form onSubmit={handleSubmit} className="space-y-4">
 								<div className="grid grid-cols-2 gap-4">
 									<div className="space-y-2">
 										<Label htmlFor="asin">ASIN</Label>
@@ -386,6 +466,29 @@ export default function AdminProducts() {
 									/>
 								</div>
 
+								<div className="space-y-2">
+									<Label htmlFor="category">Category</Label>
+									<Select
+										value={productForm.category}
+										onValueChange={(value) =>
+											setProductForm((prev) => ({
+												...prev,
+												category: value,
+											}))
+										}>
+										<SelectTrigger>
+											<SelectValue placeholder="Select category" />
+										</SelectTrigger>
+										<SelectContent>
+											{categories.map((category) => (
+												<SelectItem key={category} value={category}>
+													{category}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+
 								<div className="grid grid-cols-2 gap-4">
 									<div className="space-y-2">
 										<Label htmlFor="originalPrice">Original Price</Label>
@@ -419,60 +522,174 @@ export default function AdminProducts() {
 								<div className="grid grid-cols-2 gap-4">
 									<div className="space-y-2">
 										<Label htmlFor="material">Material</Label>
-										<Input
-											id="material"
+										<Select
 											value={productForm.material}
-											onChange={(e) =>
+											onValueChange={(value) =>
 												setProductForm((prev) => ({
 													...prev,
-													material: e.target.value,
+													material: value,
 												}))
-											}
-											required
-										/>
+											}>
+											<SelectTrigger>
+												<SelectValue placeholder="Select material" />
+											</SelectTrigger>
+											<SelectContent>
+												{materials.map((material) => (
+													<SelectItem key={material} value={material}>
+														{material}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
 									</div>
 									<div className="space-y-2">
 										<Label htmlFor="countryOfOrigin">Country of Origin</Label>
-										<Input
-											id="countryOfOrigin"
+										<Select
 											value={productForm.countryOfOrigin}
-											onChange={(e) =>
+											onValueChange={(value) =>
 												setProductForm((prev) => ({
 													...prev,
-													countryOfOrigin: e.target.value,
+													countryOfOrigin: value,
 												}))
-											}
-											required
-										/>
+											}>
+											<SelectTrigger>
+												<SelectValue placeholder="Select country" />
+											</SelectTrigger>
+											<SelectContent>
+												{countries.map((country) => (
+													<SelectItem key={country} value={country}>
+														{country}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
 									</div>
 								</div>
 
-								<div className="grid grid-cols-2 gap-4">
+								<div className="space-y-4">
 									<div className="space-y-2">
-										<Label htmlFor="dimensions">Dimensions</Label>
-										<Input
-											id="dimensions"
-											value={productForm.dimensions}
-											onChange={(e) =>
-												setProductForm((prev) => ({
-													...prev,
-													dimensions: e.target.value,
-												}))
-											}
-										/>
+										<Label>Dimensions</Label>
+										<div className="grid grid-cols-4 gap-2">
+											<div>
+												<Label htmlFor="length" className="text-xs">Length</Label>
+												<Input
+													id="length"
+													type="number"
+													placeholder="L"
+													value={productForm.dimensions.length}
+													onChange={(e) =>
+														setProductForm((prev) => ({
+															...prev,
+															dimensions: {
+																...prev.dimensions,
+																length: e.target.value,
+															},
+														}))
+													}
+												/>
+											</div>
+											<div>
+												<Label htmlFor="width" className="text-xs">Width</Label>
+												<Input
+													id="width"
+													type="number"
+													placeholder="W"
+													value={productForm.dimensions.width}
+													onChange={(e) =>
+														setProductForm((prev) => ({
+															...prev,
+															dimensions: {
+																...prev.dimensions,
+																width: e.target.value,
+															},
+														}))
+													}
+												/>
+											</div>
+											<div>
+												<Label htmlFor="height" className="text-xs">Height</Label>
+												<Input
+													id="height"
+													type="number"
+													placeholder="H"
+													value={productForm.dimensions.height}
+													onChange={(e) =>
+														setProductForm((prev) => ({
+															...prev,
+															dimensions: {
+																...prev.dimensions,
+																height: e.target.value,
+															},
+														}))
+													}
+												/>
+											</div>
+											<div>
+												<Label htmlFor="dimensionUnit" className="text-xs">Unit</Label>
+												<Select
+													value={productForm.dimensions.unit}
+													onValueChange={(value: "inch" | "cm") =>
+														setProductForm((prev) => ({
+															...prev,
+															dimensions: {
+																...prev.dimensions,
+																unit: value,
+															},
+														}))
+													}>
+													<SelectTrigger>
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent>
+														<SelectItem value="inch">inch</SelectItem>
+														<SelectItem value="cm">cm</SelectItem>
+													</SelectContent>
+												</Select>
+											</div>
+										</div>
 									</div>
+
 									<div className="space-y-2">
-										<Label htmlFor="weight">Weight</Label>
-										<Input
-											id="weight"
-											value={productForm.weight}
-											onChange={(e) =>
-												setProductForm((prev) => ({
-													...prev,
-													weight: e.target.value,
-												}))
-											}
-										/>
+										<Label>Weight</Label>
+										<div className="grid grid-cols-2 gap-2">
+											<div>
+												<Input
+													type="number"
+													placeholder="Weight"
+													value={productForm.weight.value}
+													onChange={(e) =>
+														setProductForm((prev) => ({
+															...prev,
+															weight: {
+																...prev.weight,
+																value: e.target.value,
+															},
+														}))
+													}
+												/>
+											</div>
+											<div>
+												<Select
+													value={productForm.weight.unit}
+													onValueChange={(value: "g" | "kg") =>
+														setProductForm((prev) => ({
+															...prev,
+															weight: {
+																...prev.weight,
+																unit: value,
+															},
+														}))
+													}>
+													<SelectTrigger>
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent>
+														<SelectItem value="g">g</SelectItem>
+														<SelectItem value="kg">kg</SelectItem>
+													</SelectContent>
+												</Select>
+											</div>
+										</div>
 									</div>
 								</div>
 
@@ -536,8 +753,8 @@ export default function AdminProducts() {
 									</Button>
 								</div>
 							</form>
-						</DialogContent>
-					</Dialog>
+						</ModalContent>
+					</Modal>
 				</div>
 			</div>
 
@@ -555,18 +772,30 @@ export default function AdminProducts() {
 				<div className="flex items-center gap-4">
 					<div className="flex items-center gap-2">
 						<Filter className="h-4 w-4 text-gray-500" />
+						<Select value={categoryFilter} onValueChange={setCategoryFilter}>
+							<SelectTrigger className="w-[150px]">
+								<SelectValue placeholder="Category" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">All Categories</SelectItem>
+								{categories.map((category) => (
+									<SelectItem key={category} value={category}>
+										{category}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 						<Select value={materialFilter} onValueChange={setMaterialFilter}>
 							<SelectTrigger className="w-[150px]">
 								<SelectValue placeholder="Material" />
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="all">All Materials</SelectItem>
-								<SelectItem value="Wood">Wood</SelectItem>
-								<SelectItem value="Textile">Textile</SelectItem>
-								<SelectItem value="Ceramic">Ceramic</SelectItem>
-								<SelectItem value="Metal">Metal</SelectItem>
-								<SelectItem value="Leather">Leather</SelectItem>
-								<SelectItem value="Bamboo">Bamboo</SelectItem>
+								{materials.map((material) => (
+									<SelectItem key={material} value={material}>
+										{material}
+									</SelectItem>
+								))}
 							</SelectContent>
 						</Select>
 					</div>

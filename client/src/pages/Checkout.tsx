@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Modal, ModalContent, ModalHeader, ModalTitle, ModalTrigger } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -292,302 +292,197 @@ export default function Checkout() {
 									Shipping Address
 								</CardTitle>
 							</CardHeader>
-							<CardContent className="space-y-4">
-								{/* Address Selection */}
-								{addresses.length > 0 && (
-									<div className="space-y-2">
-										<Label>Select Address</Label>
-										<div className="flex gap-2">
-											<Select value={selectedAddressId} onValueChange={setSelectedAddressId}>
-												<SelectTrigger className="flex-1">
-													<SelectValue placeholder="Choose saved address or add new" />
-												</SelectTrigger>
-												<SelectContent>
-													{addresses.map((address) => (
-														<SelectItem key={address.id} value={address.id || ""}>
-															{address.firstName} {address.lastName} - {address.streetAddress}, {address.city}
-														</SelectItem>
-													))}
-													<SelectItem value="new">Add New Address</SelectItem>
-												</SelectContent>
-											</Select>
-											<Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
-												<DialogTrigger asChild>
-													<Button type="button" variant="outline">
-														<Plus className="h-4 w-4" />
-													</Button>
-												</DialogTrigger>
-												<DialogContent className="max-w-2xl">
-													<DialogHeader>
-														<DialogTitle>Add New Address</DialogTitle>
-													</DialogHeader>
-													<form onSubmit={handleAddAddress} className="space-y-4">
-														<div className="grid grid-cols-2 gap-4">
-															<div className="space-y-2">
-																<Label htmlFor="firstName">First Name</Label>
-																<Input
-																	id="firstName"
-																	value={shippingAddress.firstName}
-																	onChange={(e) =>
-																		setShippingAddress((prev) => ({
-																			...prev,
-																			firstName: e.target.value,
-																		}))
-																	}
-																	required
-																/>
-															</div>
-															<div className="space-y-2">
-																<Label htmlFor="lastName">Last Name</Label>
-																<Input
-																	id="lastName"
-																	value={shippingAddress.lastName}
-																	onChange={(e) =>
-																		setShippingAddress((prev) => ({
-																			...prev,
-																			lastName: e.target.value,
-																		}))
-																	}
-																	required
-																/>
-															</div>
-														</div>
+							<CardContent>
+								{/* Address Cards */}
+								<div className="space-y-4">
+									<Label>Select or Add Address</Label>
+									<div className="grid gap-4 md:grid-cols-2">
+										{/* Existing Address Cards */}
+										{addresses.map((address) => (
+											<Card
+												key={address.id}
+												className={`cursor-pointer border-2 transition-colors ${
+													selectedAddressId === address.id
+														? "border-craft-brown bg-craft-brown/5"
+														: "border-gray-200 hover:border-gray-300"
+												}`}
+												onClick={() => setSelectedAddressId(address.id)}
+											>
+												<CardContent className="p-4">
+													<div className="flex items-center justify-between mb-2">
+														<h4 className="font-semibold">
+															{address.firstName} {address.lastName}
+														</h4>
+														{address.isDefault && (
+															<span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+																Default
+															</span>
+														)}
+													</div>
+													<div className="text-sm text-gray-600 space-y-1">
+														<p>{address.streetAddress}</p>
+														<p>{address.city}, {address.state} {address.zipCode}</p>
+														<p>{address.country}</p>
+														{address.phone && <p>Phone: {address.phone}</p>}
+													</div>
+												</CardContent>
+											</Card>
+										))}
 
+										{/* Add New Address Card */}
+										<Modal open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
+											<ModalTrigger asChild>
+												<Card className="cursor-pointer border-2 border-dashed border-gray-300 hover:border-craft-brown hover:bg-craft-brown/5 transition-colors">
+													<CardContent className="p-4 flex flex-col items-center justify-center min-h-[140px]">
+														<Plus className="h-8 w-8 text-gray-400 mb-2" />
+														<p className="text-sm font-medium text-gray-600">Add New Address</p>
+													</CardContent>
+												</Card>
+											</ModalTrigger>
+											<ModalContent className="max-w-2xl">
+												<ModalHeader>
+													<ModalTitle>Add New Address</ModalTitle>
+												</ModalHeader>
+												<form onSubmit={handleAddAddress} className="space-y-4">
+													<div className="grid grid-cols-2 gap-4">
 														<div className="space-y-2">
-															<Label htmlFor="streetAddress">Street Address</Label>
+															<Label htmlFor="firstName">First Name</Label>
 															<Input
-																id="streetAddress"
-																value={shippingAddress.streetAddress}
+																id="firstName"
+																value={shippingAddress.firstName}
 																onChange={(e) =>
 																	setShippingAddress((prev) => ({
 																		...prev,
-																		streetAddress: e.target.value,
+																		firstName: e.target.value,
 																	}))
 																}
 																required
 															/>
 														</div>
-
-														<div className="grid grid-cols-2 gap-4">
-															<div className="space-y-2">
-																<Label htmlFor="city">City</Label>
-																<Input
-																	id="city"
-																	value={shippingAddress.city}
-																	onChange={(e) =>
-																		setShippingAddress((prev) => ({
-																			...prev,
-																			city: e.target.value,
-																		}))
-																	}
-																	required
-																/>
-															</div>
-															<div className="space-y-2">
-																<Label htmlFor="state">State</Label>
-																<Input
-																	id="state"
-																	value={shippingAddress.state}
-																	onChange={(e) =>
-																		setShippingAddress((prev) => ({
-																			...prev,
-																			state: e.target.value,
-																		}))
-																	}
-																	required
-																/>
-															</div>
-														</div>
-
-														<div className="grid grid-cols-2 gap-4">
-															<div className="space-y-2">
-																<Label htmlFor="zipCode">ZIP Code</Label>
-																<Input
-																	id="zipCode"
-																	value={shippingAddress.zipCode}
-																	onChange={(e) =>
-																		setShippingAddress((prev) => ({
-																			...prev,
-																			zipCode: e.target.value,
-																		}))
-																	}
-																	required
-																/>
-															</div>
-															<div className="space-y-2">
-																<Label htmlFor="country">Country</Label>
-																<Input
-																	id="country"
-																	value={shippingAddress.country}
-																	onChange={(e) =>
-																		setShippingAddress((prev) => ({
-																			...prev,
-																			country: e.target.value,
-																		}))
-																	}
-																	required
-																/>
-															</div>
-														</div>
-
 														<div className="space-y-2">
-															<Label htmlFor="phone">Phone Number</Label>
+															<Label htmlFor="lastName">Last Name</Label>
 															<Input
-																id="phone"
-																value={shippingAddress.phone}
+																id="lastName"
+																value={shippingAddress.lastName}
 																onChange={(e) =>
 																	setShippingAddress((prev) => ({
 																		...prev,
-																		phone: e.target.value,
+																		lastName: e.target.value,
 																	}))
 																}
+																required
 															/>
 														</div>
+													</div>
 
-														<div className="flex space-x-2">
-															<Button type="submit" className="flex-1">
-																Add Address
-															</Button>
-															<Button
-																type="button"
-																variant="outline"
-																onClick={() => setIsAddressDialogOpen(false)}
-															>
-																Cancel
-															</Button>
+													<div className="space-y-2">
+														<Label htmlFor="streetAddress">Street Address</Label>
+														<Input
+															id="streetAddress"
+															value={shippingAddress.streetAddress}
+															onChange={(e) =>
+																setShippingAddress((prev) => ({
+																	...prev,
+																	streetAddress: e.target.value,
+																}))
+															}
+															required
+														/>
+													</div>
+
+													<div className="grid grid-cols-2 gap-4">
+														<div className="space-y-2">
+															<Label htmlFor="city">City</Label>
+															<Input
+																id="city"
+																value={shippingAddress.city}
+																onChange={(e) =>
+																	setShippingAddress((prev) => ({
+																		...prev,
+																		city: e.target.value,
+																	}))
+																}
+																required
+															/>
 														</div>
-													</form>
-												</DialogContent>
-											</Dialog>
-										</div>
+														<div className="space-y-2">
+															<Label htmlFor="state">State</Label>
+															<Input
+																id="state"
+																value={shippingAddress.state}
+																onChange={(e) =>
+																	setShippingAddress((prev) => ({
+																		...prev,
+																		state: e.target.value,
+																	}))
+																}
+																required
+															/>
+														</div>
+													</div>
+
+													<div className="grid grid-cols-2 gap-4">
+														<div className="space-y-2">
+															<Label htmlFor="zipCode">ZIP Code</Label>
+															<Input
+																id="zipCode"
+																value={shippingAddress.zipCode}
+																onChange={(e) =>
+																	setShippingAddress((prev) => ({
+																		...prev,
+																		zipCode: e.target.value,
+																	}))
+																}
+																required
+															/>
+														</div>
+														<div className="space-y-2">
+															<Label htmlFor="country">Country</Label>
+															<Input
+																id="country"
+																value={shippingAddress.country}
+																onChange={(e) =>
+																	setShippingAddress((prev) => ({
+																		...prev,
+																		country: e.target.value,
+																	}))
+																}
+																required
+															/>
+														</div>
+													</div>
+
+													<div className="space-y-2">
+														<Label htmlFor="phone">Phone Number</Label>
+														<Input
+															id="phone"
+															value={shippingAddress.phone}
+															onChange={(e) =>
+																setShippingAddress((prev) => ({
+																	...prev,
+																	phone: e.target.value,
+																}))
+															}
+														/>
+													</div>
+
+													<div className="flex space-x-2">
+														<Button type="submit" className="flex-1">
+															Add Address
+														</Button>
+														<Button
+															type="button"
+															variant="outline"
+															onClick={() => setIsAddressDialogOpen(false)}
+														>
+															Cancel
+														</Button>
+													</div>
+												</form>
+											</ModalContent>
+										</Modal>
 									</div>
-								)}
-
-								{(isNewAddress || addresses.length === 0 || !selectedAddressId) && (
-									<div className="space-y-4">
-										<div className="grid grid-cols-2 gap-4">
-											<div className="space-y-2">
-												<Label htmlFor="firstName">First Name</Label>
-												<Input
-													id="firstName"
-													value={shippingAddress.firstName}
-													onChange={(e) =>
-														setShippingAddress((prev) => ({
-															...prev,
-															firstName: e.target.value,
-														}))
-													}
-													required
-												/>
-											</div>
-											<div className="space-y-2">
-												<Label htmlFor="lastName">Last Name</Label>
-												<Input
-													id="lastName"
-													value={shippingAddress.lastName}
-													onChange={(e) =>
-														setShippingAddress((prev) => ({
-															...prev,
-															lastName: e.target.value,
-														}))
-													}
-													required
-												/>
-											</div>
-										</div>
-
-										<div className="space-y-2">
-											<Label htmlFor="streetAddress">Street Address</Label>
-											<Input
-												id="streetAddress"
-												value={shippingAddress.streetAddress}
-												onChange={(e) =>
-													setShippingAddress((prev) => ({
-														...prev,
-														streetAddress: e.target.value,
-													}))
-												}
-												required
-											/>
-										</div>
-
-										<div className="grid grid-cols-2 gap-4">
-											<div className="space-y-2">
-												<Label htmlFor="city">City</Label>
-												<Input
-													id="city"
-													value={shippingAddress.city}
-													onChange={(e) =>
-														setShippingAddress((prev) => ({
-															...prev,
-															city: e.target.value,
-														}))
-													}
-													required
-												/>
-											</div>
-											<div className="space-y-2">
-												<Label htmlFor="state">State</Label>
-												<Input
-													id="state"
-													value={shippingAddress.state}
-													onChange={(e) =>
-														setShippingAddress((prev) => ({
-															...prev,
-															state: e.target.value,
-														}))
-													}
-													required
-												/>
-											</div>
-										</div>
-
-										<div className="grid grid-cols-2 gap-4">
-											<div className="space-y-2">
-												<Label htmlFor="zipCode">ZIP Code</Label>
-												<Input
-													id="zipCode"
-													value={shippingAddress.zipCode}
-													onChange={(e) =>
-														setShippingAddress((prev) => ({
-															...prev,
-															zipCode: e.target.value,
-														}))
-													}
-													required
-												/>
-											</div>
-											<div className="space-y-2">
-												<Label htmlFor="country">Country</Label>
-												<Input
-													id="country"
-													value={shippingAddress.country}
-													onChange={(e) =>
-														setShippingAddress((prev) => ({
-															...prev,
-															country: e.target.value,
-														}))
-													}
-													required
-												/>
-											</div>
-										</div>
-
-										<div className="space-y-2">
-											<Label htmlFor="phone">Phone Number</Label>
-											<Input
-												id="phone"
-												value={shippingAddress.phone}
-												onChange={(e) =>
-													setShippingAddress((prev) => ({
-														...prev,
-														phone: e.target.value,
-													}))
-												}
-											/>
-										</div>
-									</div>
-								)}
+								</div>
 							</CardContent>
 						</Card>
 
