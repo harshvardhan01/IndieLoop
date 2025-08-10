@@ -14,12 +14,16 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquare, Filter, Search } from "lucide-react";
 import { useState, useMemo } from "react";
-import { Modal, ModalContent, ModalHeader, ModalTitle } from "@/components/ui/modal";
+import {
+	Modal,
+	ModalContent,
+	ModalHeader,
+	ModalTitle,
+} from "@/components/ui/modal";
 
 interface SupportMessage {
 	id: string;
@@ -41,7 +45,9 @@ export default function AdminSupport() {
 	// State for filters
 	const [filterStatus, setFilterStatus] = useState("all");
 	const [searchTerm, setSearchTerm] = useState("");
-	const [selectedTicket, setSelectedTicket] = useState<SupportMessage | null>(null);
+	const [selectedTicket, setSelectedTicket] = useState<SupportMessage | null>(
+		null
+	);
 
 	// Fetch support messages
 	const { data: messages = [] } = useQuery<SupportMessage[]>({
@@ -49,10 +55,13 @@ export default function AdminSupport() {
 		queryFn: async () => {
 			const response = await fetch("/api/admin/support", {
 				headers: {
-					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
+					Authorization: `Bearer ${localStorage.getItem(
+						"sessionId"
+					)}`,
 				},
 			});
-			if (!response.ok) throw new Error("Failed to fetch support messages");
+			if (!response.ok)
+				throw new Error("Failed to fetch support messages");
 			return response.json();
 		},
 	});
@@ -60,11 +69,18 @@ export default function AdminSupport() {
 	// Filtered messages
 	const filteredMessages = useMemo(() => {
 		return messages.filter((message) => {
-			const matchesStatus = filterStatus === "all" || filterStatus === "" || message.status === filterStatus;
+			const matchesStatus =
+				filterStatus === "all" ||
+				filterStatus === "" ||
+				message.status === filterStatus;
 			const matchesSearch =
 				searchTerm === "" ||
-				message.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				message.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				message.subject
+					.toLowerCase()
+					.includes(searchTerm.toLowerCase()) ||
+				message.message
+					.toLowerCase()
+					.includes(searchTerm.toLowerCase()) ||
 				message.email.toLowerCase().includes(searchTerm.toLowerCase());
 			return matchesStatus && matchesSearch;
 		});
@@ -77,11 +93,14 @@ export default function AdminSupport() {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
+					Authorization: `Bearer ${localStorage.getItem(
+						"sessionId"
+					)}`,
 				},
 				body: JSON.stringify({ status }),
 			});
-			if (!response.ok) throw new Error("Failed to update message status");
+			if (!response.ok)
+				throw new Error("Failed to update message status");
 			return response.json();
 		},
 		onSuccess: () => {
@@ -118,26 +137,11 @@ export default function AdminSupport() {
 
 			{/* Filters */}
 			<div className="mb-6 flex items-center gap-4">
-				<div className="flex items-center gap-2">
-					<label htmlFor="status-filter" className="font-medium">
-						Status:
-					</label>
-					<Select value={filterStatus} onValueChange={setFilterStatus}>
-						<SelectTrigger className="w-[150px]">
-							<SelectValue placeholder="All Statuses" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">All Statuses</SelectItem>
-							<SelectItem value="new">New</SelectItem>
-							<SelectItem value="in-progress">In Progress</SelectItem>
-							<SelectItem value="resolved">Resolved</SelectItem>
-						</SelectContent>
-					</Select>
-				</div>
 				<div className="flex items-center gap-2 flex-1">
 					<label htmlFor="search-filter" className="sr-only">
 						Search
 					</label>
+					<Search className="h-4 w-4 text-gray-500" />
 					<Input
 						id="search-filter"
 						type="text"
@@ -146,9 +150,24 @@ export default function AdminSupport() {
 						onChange={(e) => setSearchTerm(e.target.value)}
 						className="flex-1"
 					/>
-					<Button variant="outline">
-						<Search className="h-4 w-4 mr-2" /> Search
-					</Button>
+				</div>
+				<div className="flex items-center gap-2">
+					<Filter className="h-4 w-4 text-gray-500" />
+					<Select
+						value={filterStatus}
+						onValueChange={setFilterStatus}>
+						<SelectTrigger className="w-[150px]">
+							<SelectValue placeholder="All Statuses" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="all">All Statuses</SelectItem>
+							<SelectItem value="new">New</SelectItem>
+							<SelectItem value="in-progress">
+								In Progress
+							</SelectItem>
+							<SelectItem value="resolved">Resolved</SelectItem>
+						</SelectContent>
+					</Select>
 				</div>
 			</div>
 
@@ -172,29 +191,37 @@ export default function AdminSupport() {
 									<div>
 										<CardTitle>{message.subject}</CardTitle>
 										<CardDescription>
-											From: {message.firstName} {message.lastName} ({message.email})
+											From: {message.firstName}{" "}
+											{message.lastName} ({message.email})
 										</CardDescription>
 									</div>
 									<div className="text-right">
 										<p className="text-sm text-gray-500">
-											{new Date(message.createdAt).toLocaleDateString()}
+											{new Date(
+												message.createdAt
+											).toLocaleDateString()}
 										</p>
 										<p
 											className={`text-sm px-2 py-1 rounded mt-1 ${
 												message.status === "resolved"
 													? "bg-green-100 text-green-800"
-													: message.status === "in-progress"
+													: message.status ===
+													  "in-progress"
 													? "bg-yellow-100 text-yellow-800"
 													: "bg-gray-100 text-gray-800"
 											}`}>
-											{message.status.toUpperCase().replace("-", " ")}
+											{message.status
+												.toUpperCase()
+												.replace("-", " ")}
 										</p>
 									</div>
 								</div>
 							</CardHeader>
 							<CardContent>
 								<div className="mb-4">
-									<h4 className="font-semibold mb-2">Message</h4>
+									<h4 className="font-semibold mb-2">
+										Message
+									</h4>
 									<p className="text-sm text-gray-700 whitespace-pre-wrap">
 										{message.message}
 									</p>
@@ -202,27 +229,39 @@ export default function AdminSupport() {
 
 								<div className="flex justify-between items-center">
 									<div className="flex items-center gap-2">
-										<label className="text-sm font-medium">Status:</label>
+										<label className="text-sm font-medium">
+											Status:
+										</label>
 										<Select
 											value={message.status}
 											onValueChange={(status) =>
-												updateMessageStatusMutation.mutate({
-													id: message.id,
-													status,
-												})
+												updateMessageStatusMutation.mutate(
+													{
+														id: message.id,
+														status,
+													}
+												)
 											}>
 											<SelectTrigger className="w-[150px]">
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
-												<SelectItem value="new">New</SelectItem>
-												<SelectItem value="in-progress">In Progress</SelectItem>
-												<SelectItem value="resolved">Resolved</SelectItem>
+												<SelectItem value="new">
+													New
+												</SelectItem>
+												<SelectItem value="in-progress">
+													In Progress
+												</SelectItem>
+												<SelectItem value="resolved">
+													Resolved
+												</SelectItem>
 											</SelectContent>
 										</Select>
 									</div>
 									{message.phone && (
-										<p className="text-sm text-gray-600">Phone: {message.phone}</p>
+										<p className="text-sm text-gray-600">
+											Phone: {message.phone}
+										</p>
 									)}
 								</div>
 							</CardContent>
@@ -231,7 +270,9 @@ export default function AdminSupport() {
 				)}
 			</div>
 
-			<Modal open={!!selectedTicket} onOpenChange={() => setSelectedTicket(null)}>
+			<Modal
+				open={!!selectedTicket}
+				onOpenChange={() => setSelectedTicket(null)}>
 				<ModalContent className="max-w-2xl">
 					<ModalHeader>
 						<ModalTitle>Support Ticket Details</ModalTitle>
@@ -240,14 +281,19 @@ export default function AdminSupport() {
 						<div className="p-4">
 							<div className="mb-4 flex justify-between items-center">
 								<div>
-									<h2 className="text-xl font-bold">{selectedTicket.subject}</h2>
+									<h2 className="text-xl font-bold">
+										{selectedTicket.subject}
+									</h2>
 									<p className="text-sm text-gray-600">
-										From: {selectedTicket.firstName} {selectedTicket.lastName} (
+										From: {selectedTicket.firstName}{" "}
+										{selectedTicket.lastName} (
 										{selectedTicket.email})
 									</p>
 								</div>
 								<p className="text-sm text-gray-500">
-									{new Date(selectedTicket.createdAt).toLocaleDateString()}
+									{new Date(
+										selectedTicket.createdAt
+									).toLocaleDateString()}
 								</p>
 							</div>
 							<div className="mb-4">
@@ -262,7 +308,9 @@ export default function AdminSupport() {
 								</p>
 							)}
 							<div className="flex items-center gap-2">
-								<label className="text-sm font-medium">Status:</label>
+								<label className="text-sm font-medium">
+									Status:
+								</label>
 								<Select
 									value={selectedTicket.status}
 									onValueChange={(status) => {
@@ -279,8 +327,12 @@ export default function AdminSupport() {
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="new">New</SelectItem>
-										<SelectItem value="in-progress">In Progress</SelectItem>
-										<SelectItem value="resolved">Resolved</SelectItem>
+										<SelectItem value="in-progress">
+											In Progress
+										</SelectItem>
+										<SelectItem value="resolved">
+											Resolved
+										</SelectItem>
 									</SelectContent>
 								</Select>
 							</div>
