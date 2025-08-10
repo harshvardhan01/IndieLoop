@@ -4,7 +4,15 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Package, Truck, CheckCircle, Clock, ArrowLeft, Eye, X } from "lucide-react";
+import {
+	Package,
+	Truck,
+	CheckCircle,
+	Clock,
+	ArrowLeft,
+	Eye,
+	X,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useToast } from "@/hooks/use-toast";
@@ -289,8 +297,7 @@ export default function Orders() {
 													<Eye className="h-3 w-3 mr-1" />
 													Details
 												</Button>
-												{(order.status ===
-													"pending" ||
+												{(order.status === "pending" ||
 													order.status ===
 														"processing") && (
 													<Button
@@ -334,24 +341,6 @@ export default function Orders() {
 																					.product
 																					.name
 																			}
-																		</div>
-																		<div className="text-sm text-gray-600">
-																			ASIN:{" "}
-																			<span className="font-mono">
-																				{
-																					item
-																						.product
-																						.asin
-																				}
-																			</span>
-																		</div>
-																		<div className="text-sm text-gray-600">
-																			ID:{" "}
-																			<span className="font-mono">
-																				{item.productId.slice(
-																					-8
-																				)}
-																			</span>
 																		</div>
 																		<div className="text-sm">
 																			Quantity:{" "}
@@ -398,29 +387,6 @@ export default function Orders() {
 												)}
 											</div>
 										</div>
-
-										{/* Tracking Information */}
-										{order.trackingNumber && (
-											<div className="bg-gray-50 rounded-lg p-4">
-												<h4 className="font-semibold text-gray-900 mb-2 flex items-center">
-													<Truck className="h-4 w-4 mr-2" />
-													Tracking Information
-												</h4>
-												<div className="text-sm">
-													<span className="text-gray-600">
-														Tracking Number:{" "}
-													</span>
-													<span className="font-mono font-medium">
-														{order.trackingNumber}
-													</span>
-												</div>
-												<p className="text-xs text-gray-500 mt-1">
-													Use this tracking number to
-													monitor your shipment
-													progress
-												</p>
-											</div>
-										)}
 
 										{/* Order Status Timeline */}
 										<div className="bg-gray-50 rounded-lg p-4">
@@ -602,30 +568,43 @@ export default function Orders() {
 									<div>
 										<p className="text-gray-600">Name</p>
 										<p className="font-medium">
-											{selectedOrder.shippingAddress?.firstName || 'N/A'}{" "}
-											{selectedOrder.shippingAddress?.lastName || ''}
+											{selectedOrder.shippingAddress
+												?.firstName || "N/A"}{" "}
+											{selectedOrder.shippingAddress
+												?.lastName || ""}
 										</p>
 									</div>
 									<div>
 										<p className="text-gray-600">Email</p>
 										<p className="font-medium">
-											{user?.email || 'Not provided'}
+											{user?.email || "Not provided"}
 										</p>
 									</div>
 									<div>
 										<p className="text-gray-600">Phone</p>
 										<p className="font-medium">
-											{selectedOrder.shippingAddress?.phone || 'Not provided'}
+											{selectedOrder.shippingAddress
+												?.phone || "Not provided"}
 										</p>
 									</div>
 									<div className="md:col-span-3">
-										<p className="text-gray-600">Shipping Address</p>
+										<p className="text-gray-600">
+											Shipping Address
+										</p>
 										<p className="font-medium">
-											{selectedOrder.shippingAddress?.streetAddress || 'No address'},{" "}
-											{selectedOrder.shippingAddress?.city || ''},{" "}
-											{selectedOrder.shippingAddress?.state || ''}{" "}
-											{selectedOrder.shippingAddress?.zipCode || ''},{" "}
-											{selectedOrder.shippingAddress?.country || ''}
+											{selectedOrder.shippingAddress
+												?.streetAddress || "No address"}
+											,{" "}
+											{selectedOrder.shippingAddress
+												?.city || ""}
+											,{" "}
+											{selectedOrder.shippingAddress
+												?.state || ""}{" "}
+											{selectedOrder.shippingAddress
+												?.zipCode || ""}
+											,{" "}
+											{selectedOrder.shippingAddress
+												?.country || ""}
 										</p>
 									</div>
 								</div>
@@ -643,51 +622,81 @@ export default function Orders() {
 									</span>
 								</h4>
 								<div className="space-y-2">
-									{selectedOrder.items.map(
-										(item, index) => (
-											<div
-												key={index}
-												className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-												<div className="flex items-center flex-1">
-													{item.product && item.product.images && item.product.images.length > 0 && (
+									{selectedOrder.items.map((item, index) => (
+										<div
+											key={index}
+											className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+											<div className="flex items-center flex-1">
+												{item.product &&
+													item.product.images &&
+													item.product.images.length >
+														0 && (
 														<img
-															src={item.product.images[0]}
-															alt={item.product.name || 'Product image'}
+															src={
+																item.product
+																	.images[0]
+															}
+															alt={
+																item.product
+																	.name ||
+																"Product image"
+															}
 															className="w-16 h-16 object-cover rounded mr-4"
 														/>
 													)}
-													<div className="flex-1">
-														<div className="font-medium text-gray-900">
-															{item.product?.name ? (
-																<Link 
-																	href={`/product/${item.productId}`}
-																	className="text-craft-brown hover:text-craft-brown/80 hover:underline"
-																>
-																	{item.product.name}
-																</Link>
-															) : (
-																`Product ID: ${item.productId.slice(-8)}`
-															)}
-														</div>
-														<div className="text-sm text-gray-600">
-															Qty: {item.quantity}
-														</div>
-													</div>
-												</div>
-												<div className="text-right ml-4">
-													<div className="font-medium">
-														{formatPrice(
-															item.price,
-															selectedOrder.currency
+												<div className="flex-1">
+													<div className="font-medium text-gray-900">
+														{item.product?.name ? (
+															<Link
+																href={`/product/${item.productId}`}
+																className="text-craft-brown hover:text-craft-brown/80 hover:underline">
+																{
+																	item.product
+																		.name
+																}
+															</Link>
+														) : (
+															`Product ID: ${item.productId.slice(
+																-8
+															)}`
 														)}
 													</div>
+
 													<div className="text-sm text-gray-600">
-														each
+														ASIN:{" "}
+														<span className="font-mono">
+															{item.product.asin}
+														</span>
+													</div>
+													<div className="text-sm text-gray-600">
+														ID:{" "}
+														<span className="font-mono">
+															{item.productId.slice(
+																-8
+															)}
+														</span>
+													</div>
+													<div className="text-sm">
+														Quantity:{" "}
+														<span className="font-medium">
+															{item.quantity}
+														</span>
 													</div>
 												</div>
 											</div>
-										)
-									)}
+											<div className="text-right ml-4">
+												<div className="font-medium">
+													{formatPrice(
+														item.price,
+														selectedOrder.currency
+													)}
+												</div>
+												<div className="text-sm text-gray-600">
+													each
+												</div>
+											</div>
+										</div>
+									))}
 								</div>
 							</div>
 
@@ -698,7 +707,10 @@ export default function Orders() {
 										Payment Method
 									</h4>
 									<p className="font-medium capitalize">
-										{selectedOrder.paymentMethod === 'cod' ? 'Cash on Delivery' : selectedOrder.paymentMethod || 'Not specified'}
+										{selectedOrder.paymentMethod === "cod"
+											? "Cash on Delivery"
+											: selectedOrder.paymentMethod ||
+											  "Not specified"}
 									</p>
 								</div>
 								<div className="bg-gray-50 rounded-lg p-4">
@@ -733,8 +745,8 @@ export default function Orders() {
 										</span>
 									</div>
 									<p className="text-xs text-gray-500 mt-1">
-										Use this tracking number to monitor
-										your shipment progress
+										Use this tracking number to monitor your
+										shipment progress
 									</p>
 								</div>
 							)}
