@@ -602,26 +602,26 @@ export default function Orders() {
 									<div>
 										<p className="text-gray-600">Name</p>
 										<p className="font-medium">
-											{selectedOrder.customer?.firstName || selectedOrder.shippingAddress?.firstName || 'N/A'}{" "}
-											{selectedOrder.customer?.lastName || selectedOrder.shippingAddress?.lastName || ''}
+											{selectedOrder.shippingAddress?.firstName || 'N/A'}{" "}
+											{selectedOrder.shippingAddress?.lastName || ''}
 										</p>
 									</div>
 									<div>
 										<p className="text-gray-600">Email</p>
 										<p className="font-medium">
-											{selectedOrder.customer?.email || selectedOrder.shippingAddress?.email || 'Not provided'}
+											{user?.email || 'Not provided'}
 										</p>
 									</div>
 									<div>
 										<p className="text-gray-600">Phone</p>
 										<p className="font-medium">
-											{selectedOrder.customer?.phone || selectedOrder.shippingAddress?.phone || 'Not provided'}
+											{selectedOrder.shippingAddress?.phone || 'Not provided'}
 										</p>
 									</div>
 									<div className="md:col-span-3">
-										<p className="text-gray-600">Address</p>
+										<p className="text-gray-600">Shipping Address</p>
 										<p className="font-medium">
-											{selectedOrder.shippingAddress?.street || selectedOrder.shippingAddress?.streetAddress || 'No address'},{" "}
+											{selectedOrder.shippingAddress?.streetAddress || 'No address'},{" "}
 											{selectedOrder.shippingAddress?.city || ''},{" "}
 											{selectedOrder.shippingAddress?.state || ''}{" "}
 											{selectedOrder.shippingAddress?.zipCode || ''},{" "}
@@ -649,28 +649,25 @@ export default function Orders() {
 												key={index}
 												className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
 												<div className="flex items-center flex-1">
-													{item.product && (
+													{item.product && item.product.images && item.product.images.length > 0 && (
 														<img
-															src={
-																item.product
-																	.imageUrl
-															}
-															alt={
-																item.product
-																	.name
-															}
+															src={item.product.images[0]}
+															alt={item.product.name || 'Product image'}
 															className="w-16 h-16 object-cover rounded mr-4"
 														/>
 													)}
 													<div className="flex-1">
 														<div className="font-medium text-gray-900">
-															{
-																item.product
-																	?.name ??
-																	`Product ID: ${item.productId.slice(
-																		-8
-																	)}`
-															}
+															{item.product?.name ? (
+																<Link 
+																	href={`/product/${item.productId}`}
+																	className="text-craft-brown hover:text-craft-brown/80 hover:underline"
+																>
+																	{item.product.name}
+																</Link>
+															) : (
+																`Product ID: ${item.productId.slice(-8)}`
+															)}
 														</div>
 														<div className="text-sm text-gray-600">
 															Qty: {item.quantity}
@@ -701,7 +698,7 @@ export default function Orders() {
 										Payment Method
 									</h4>
 									<p className="font-medium capitalize">
-										{selectedOrder.paymentMethod}
+										{selectedOrder.paymentMethod === 'cod' ? 'Cash on Delivery' : selectedOrder.paymentMethod || 'Not specified'}
 									</p>
 								</div>
 								<div className="bg-gray-50 rounded-lg p-4">

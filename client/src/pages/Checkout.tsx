@@ -126,38 +126,65 @@ export default function Checkout() {
 				addressToUse = shippingAddress;
 			}
 
-			if (!addressToUse || !addressToUse.streetAddress) {
-				throw new Error("Please provide a shipping address");
+			if (!addressToUse) {
+				throw new Error("No shipping address selected");
 			}
 
-			const orderItems = cartItems.map((item: any) => ({
+			const orderItems = cartItems.map((item) => ({
 				productId: item.productId,
 				quantity: item.quantity,
-				price: parseFloat(item.product.discountedPrice || item.product.originalPrice),
+				price: parseFloat(
+					item.product?.discountedPrice ||
+						item.product?.originalPrice ||
+						"0"
+				),
 			}));
 
-			return apiRequest("POST", "/api/orders", {
-				items: orderItems,
-				totalAmount: totalAmount.toString(),
-				currency: "INR",
-				paymentMethod,
-				shippingAddress: addressToUse,
+			const response = await fetch("/api/orders", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
+				},
+				body: JSON.stringify({
+					items: orderItems,
+					totalAmount: totalAmount.toString(),
+					currency: "INR",
+					shippingAddress: {
+						firstName: addressToUse.firstName,
+						lastName: addressToUse.lastName,
+						streetAddress: addressToUse.streetAddress,
+						city: addressToUse.city,
+						state: addressToUse.state,
+						zipCode: addressToUse.zipCode,
+						country: addressToUse.country,
+						phone: addressToUse.phone,
+					},
+					paymentMethod,
+				}),
 			});
+
+			if (!response.ok) {
+				throw new Error("Failed to create order");
+			}
+
+			return response.json();
 		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-			queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-			toast({ 
-				title: "Order placed successfully!", 
-				description: "Thank you for your purchase." 
+		onSuccess: (order) => {
+			toast({
+				title: "Order Placed Successfully!",
+				description: `Your order #${order.id.slice(-8).toUpperCase()} has been placed.`,
 			});
+			// Clear cart from React Query cache
+			queryClient.setQueryData(["/api/cart"], []);
+			// Redirect to orders page
 			setLocation("/orders");
 		},
-		onError: (error: any) => {
-			toast({ 
-				title: "Error", 
-				description: error.message || "Failed to place order", 
-				variant: "destructive" 
+		onError: () => {
+			toast({
+				title: "Error",
+				description: "Failed to place order. Please try again.",
+				variant: "destructive",
 			});
 		},
 	});
@@ -198,10 +225,10 @@ export default function Checkout() {
 	};
 
 	const handlePlaceOrder = () => {
-		if (!selectedAddressId) {
+		if (!selectedAddressId && !isNewAddress) {
 			toast({
 				title: "Error",
-				description: "Please select a shipping address",
+				description: "Please select a shipping address or add a new one",
 				variant: "destructive",
 			});
 			return;
@@ -640,7 +667,7 @@ export default function Checkout() {
 
 								<Button
 									onClick={handlePlaceOrder}
-									disabled={createOrderMutation.isPending || !selectedAddressId}
+									disabled={createOrderMutation.isPending || (!selectedAddressId && !isNewAddress)}
 									className="w-full bg-craft-brown hover:bg-craft-brown/90"
 								>
 									{createOrderMutation.isPending ? "Placing Order..." : "Place Order"}

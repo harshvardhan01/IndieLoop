@@ -42,26 +42,20 @@ export default function Addresses() {
 		isDefault: false,
 	});
 
-	// Mock addresses data - in a real app, this would come from the backend
+	// Fetch addresses from the backend
 	const { data: addresses = [] } = useQuery<Address[]>({
 		queryKey: ["addresses"],
 		enabled: isAuthenticated,
 		queryFn: async () => {
-			// This would be a real API call
-			return [
-				{
-					id: "1",
-					firstName: user?.firstName || "",
-					lastName: user?.lastName || "",
-					streetAddress: "123 Main St",
-					city: "New York",
-					state: "NY",
-					zipCode: "10001",
-					country: "USA",
-					phone: "+1234567890",
-					isDefault: true,
+			const response = await fetch("/api/addresses", {
+				headers: {
+					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
 				},
-			];
+			});
+			if (!response.ok) {
+				throw new Error("Failed to fetch addresses");
+			}
+			return response.json();
 		},
 	});
 
@@ -86,23 +80,82 @@ export default function Addresses() {
 		setIsAddressDialogOpen(true);
 	};
 
+	const addressMutation = useMutation({
+		mutationFn: async (data: typeof addressForm) => {
+			const url = editingAddress ? `/api/addresses/${editingAddress.id}` : "/api/addresses";
+			const method = editingAddress ? "PUT" : "POST";
+			
+			const response = await fetch(url, {
+				method,
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
+				},
+				body: JSON.stringify(data),
+			});
+			
+			if (!response.ok) {
+				throw new Error("Failed to save address");
+			}
+			
+			return response.json();
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["addresses"] });
+			toast({
+				title: "Success",
+				description: editingAddress ? "Address updated successfully" : "Address added successfully",
+			});
+			setIsAddressDialogOpen(false);
+			resetForm();
+		},
+		onError: () => {
+			toast({
+				title: "Error",
+				description: "Failed to save address. Please try again.",
+				variant: "destructive",
+			});
+		},
+	});
+
 	const handleSubmitAddress = (e: React.FormEvent) => {
 		e.preventDefault();
-		// In a real app, this would make API calls
-		toast({
-			title: "Success",
-			description: editingAddress ? "Address updated successfully" : "Address added successfully",
-		});
-		setIsAddressDialogOpen(false);
-		resetForm();
+		addressMutation.mutate(addressForm);
 	};
 
+	const deleteMutation = useMutation({
+		mutationFn: async (id: string) => {
+			const response = await fetch(`/api/addresses/${id}`, {
+				method: "DELETE",
+				headers: {
+					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
+				},
+			});
+			
+			if (!response.ok) {
+				throw new Error("Failed to delete address");
+			}
+			
+			return response.json();
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["addresses"] });
+			toast({
+				title: "Success",
+				description: "Address deleted successfully",
+			});
+		},
+		onError: () => {
+			toast({
+				title: "Error",
+				description: "Failed to delete address. Please try again.",
+				variant: "destructive",
+			});
+		},
+	});
+
 	const handleDeleteAddress = (id: string) => {
-		// In a real app, this would make an API call
-		toast({
-			title: "Success",
-			description: "Address deleted successfully",
-		});
+		deleteMutation.mutate(id);
 	};
 
 	if (!isAuthenticated) {

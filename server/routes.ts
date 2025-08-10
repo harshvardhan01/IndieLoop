@@ -3,12 +3,20 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import {
+	type User,
+	type Product,
+	type Review,
+	type Order,
+	type CartItem,
+	insertUserSchema,
+	insertProductSchema,
+	insertReviewSchema,
+	insertOrderSchema,
+	insertCartItemSchema,
+	insertSupportMessageSchema,
+	insertAddressSchema,
 	loginSchema,
 	registerSchema,
-	insertCartItemSchema,
-	insertOrderSchema,
-	insertSupportMessageSchema,
-	insertProductSchema,
 } from "@shared/schema";
 import { sendEmail } from "./config/email";
 
@@ -187,7 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 		}
 	});
 
-	
+
 
 	app.get("/api/products/:id", async (req, res) => {
 		try {
@@ -326,15 +334,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 			if (!order) {
 				return res.status(404).json({ message: "Order not found" });
 			}
-			
+
 			// Verify the order belongs to the user (unless admin)
 			const userOrder = await storage.getUserOrders(req.user.userId);
 			const orderExists = userOrder.find(o => o.id === req.params.id);
-			
+
 			if (!orderExists && !req.user.isAdmin) {
 				return res.status(403).json({ message: "Not authorized to cancel this order" });
 			}
-			
+
 			res.json(order);
 		} catch (error) {
 			res.status(500).json({ message: "Failed to cancel order" });
@@ -387,25 +395,36 @@ ${messageData.message}
 
 	app.post("/api/addresses", requireAuth, async (req: any, res) => {
 		try {
-			const addressData = {
+			const addressData = insertAddressSchema.parse({
 				...req.body,
 				userId: req.user.userId,
-			};
+			});
 			const address = await storage.createAddress(addressData);
 			res.json(address);
 		} catch (error) {
+			if (error instanceof z.ZodError) {
+				return res
+					.status(400)
+					.json({ message: error.errors[0].message });
+			}
 			res.status(500).json({ message: "Failed to create address" });
 		}
 	});
 
 	app.put("/api/addresses/:id", requireAuth, async (req: any, res) => {
 		try {
-			const address = await storage.updateAddress(req.params.id, req.body);
+			const addressData = insertAddressSchema.parse(req.body);
+			const address = await storage.updateAddress(req.params.id, addressData);
 			if (!address) {
 				return res.status(404).json({ message: "Address not found" });
 			}
 			res.json(address);
 		} catch (error) {
+			if (error instanceof z.ZodError) {
+				return res
+					.status(400)
+					.json({ message: error.errors[0].message });
+			}
 			res.status(500).json({ message: "Failed to update address" });
 		}
 	});
@@ -523,7 +542,27 @@ ${messageData.message}
 	app.get("/api/admin/orders", requireAdmin, async (req: any, res) => {
 		try {
 			const orders = await storage.getAllOrders();
-			res.json(orders);
+			
+			// Enhance orders with user details
+			const ordersWithUsers = await Promise.all(
+				orders.map(async (order) => {
+					try {
+						const user = await storage.getUser(order.userId);
+						return {
+							...order,
+							customer: user ? {
+								firstName: user.firstName,
+								lastName: user.lastName,
+								email: user.email
+							} : null
+						};
+					} catch {
+						return order;
+					}
+				})
+			);
+			
+			res.json(ordersWithUsers);
 		} catch (error) {
 			res.status(500).json({ message: "Failed to fetch orders" });
 		}

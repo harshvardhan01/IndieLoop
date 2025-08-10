@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ShoppingCart, Filter, Search } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Link } from "wouter";
 
 export default function AdminOrders() {
 	const { user, isLoading: authLoading } = useAuth();
@@ -81,7 +82,30 @@ export default function AdminOrders() {
 				})
 			);
 
-			return ordersWithUsers;
+			// Fetch product details for each order item
+			const ordersWithProducts = await Promise.all(
+				ordersWithUsers.map(async (order: any) => {
+					const itemsWithProducts = await Promise.all(
+						order.items.map(async (item: any) => {
+							try {
+								const productResponse = await fetch(
+									`/api/products/${item.productId}`
+								);
+								if (productResponse.ok) {
+									const product = await productResponse.json();
+									return { ...item, product };
+								}
+								return item;
+							} catch {
+								return item;
+							}
+						})
+					);
+					return { ...order, items: itemsWithProducts };
+				})
+			);
+
+			return ordersWithProducts;
 		},
 		enabled: !!user?.isAdmin,
 	});
@@ -111,7 +135,7 @@ export default function AdminOrders() {
 			return response.json();
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["admin", "orders"] });
+			queryClient.invalidateQueries({ queryKey: ["/api/admin/orders"] });
 			toast({
 				title: "Success",
 				description: "Order status updated successfully",
@@ -239,7 +263,7 @@ export default function AdminOrders() {
 											className="cursor-pointer hover:text-craft-brown"
 											onClick={() => openOrderDetails(order)}
 										>
-											Order #{order.id.substring(0, 8)}
+											Order #{order.id.slice(-8).toUpperCase()}
 										</CardTitle>
 										<CardDescription>
 											{new Date(
@@ -274,8 +298,14 @@ export default function AdminOrders() {
 											Customer Details
 										</h4>
 										<p className="text-sm">
-											{order.shippingAddress?.firstName || 'N/A'}{" "}
-											{order.shippingAddress?.lastName || ''}
+											{order.customer?.firstName || order.shippingAddress?.firstName || 'N/A'}{" "}
+											{order.customer?.lastName || order.shippingAddress?.lastName || ''}
+										</p>
+										<p className="text-sm text-gray-600">
+											{order.customer?.email || 'No email'}
+										</p>
+										<p className="text-sm text-gray-600 mt-2">
+											<strong>Shipping Address:</strong>
 										</p>
 										<p className="text-sm text-gray-600">
 											{order.shippingAddress?.streetAddress || 'No address'}
@@ -303,7 +333,7 @@ export default function AdminOrders() {
 											<div
 												key={index}
 												className="text-sm mb-1">
-												{item.productName} ×{" "}
+												{item.product?.name || item.productName || 'Product name not available'} ×{" "}
 												{item.quantity}
 											</div>
 										))}
@@ -383,6 +413,16 @@ export default function AdminOrders() {
 											</Button>
 										</div>
 									</div>
+
+									<div className="flex gap-2">
+										<Button
+											size="sm"
+											variant="outline"
+											onClick={() => openOrderDetails(order)}
+										>
+											Order Details
+										</Button>
+									</div>
 								</div>
 							</CardContent>
 						</Card>
@@ -395,7 +435,7 @@ export default function AdminOrders() {
 				<DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>
-							Order Details - #{selectedOrder?.id.substring(0, 8)}
+							Order Details - #{selectedOrder?.id.slice(-8).toUpperCase()}
 						</DialogTitle>
 					</DialogHeader>
 					{selectedOrder && (
@@ -470,13 +510,38 @@ export default function AdminOrders() {
 								<h4 className="font-semibold mb-3">Order Items</h4>
 								<div className="space-y-3">
 									{selectedOrder.items.map((item, index) => (
-										<div key={index} className="flex justify-between items-center p-3 border rounded-lg">
-											<div className="flex-1">
-												<p className="font-medium">{item.productName}</p>
-												<p className="text-sm text-gray-600">Product ID: {item.productId}</p>
-												<p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+										<div key={index} className="flex items-center p-3 border rounded-lg">
+											<div className="flex items-center flex-1">
+												{item.product && item.product.images && item.product.images.length > 0 && (
+													<img
+														src={item.product.images[0]}
+														alt={item.product.name || 'Product image'}
+														className="w-16 h-16 object-cover rounded mr-4"
+													/>
+												)}
+												<div className="flex-1">
+													<div className="font-medium text-lg">
+														{item.product?.name || item.productName ? (
+															<Link 
+																href={`/product/${item.productId}`}
+																className="text-craft-brown hover:text-craft-brown/80 hover:underline"
+															>
+																{item.product?.name || item.productName}
+															</Link>
+														) : (
+															<span className="text-gray-500">Product name not available</span>
+														)}
+													</div>
+													{item.product?.asin ? (
+														<p className="text-sm text-gray-600 font-mono">ASIN: {item.product.asin}</p>
+													) : (
+														<p className="text-sm text-gray-500 italic">ASIN: Not available</p>
+													)}
+													<p className="text-sm text-gray-600">Product ID: {item.productId}</p>
+													<p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+												</div>
 											</div>
-											<div className="text-right">
+											<div className="text-right ml-4">
 												<p className="font-medium">₹{item.price}</p>
 												<p className="text-sm text-gray-600">each</p>
 												<p className="text-sm font-medium">Total: ₹{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>

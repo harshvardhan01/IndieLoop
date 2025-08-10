@@ -95,7 +95,7 @@ export class MemStorage implements IStorage {
 	private orders: Map<string, Order> = new Map();
 	private cartItems: Map<string, CartItem> = new Map();
 	private supportMessages: Map<string, SupportMessage> = new Map();
-	// No need for addresses map as we are using drizzle-orm for storage
+	private addresses: Map<string, Address> = new Map();
 
 	constructor() {
 		this.seedData(); // Initialize with sample data
@@ -215,8 +215,6 @@ export class MemStorage implements IStorage {
 			id,
 			createdAt: new Date(),
 		};
-		// Add addresses property for in-memory storage
-		(user as any).addresses = [];
 		this.users.set(id, user);
 		return user;
 	}
@@ -479,8 +477,9 @@ export class MemStorage implements IStorage {
 
 	// Address operations
 	async getUserAddresses(userId: string): Promise<Address[]> {
-		const user = this.users.get(userId);
-		return (user as any)?.addresses || [];
+		return Array.from(this.addresses.values()).filter(
+			(address) => address.userId === userId
+		);
 	}
 
 	async createAddress(insertAddress: InsertAddress): Promise<Address> {
@@ -491,65 +490,54 @@ export class MemStorage implements IStorage {
 			isDefault: insertAddress.isDefault || false,
 			createdAt: new Date(),
 		};
-		// In a real scenario, you'd interact with a database here.
-		// For this mock implementation, we'll simulate adding to a user's addresses.
-		const user = this.users.get(address.userId);
-		if (user) {
-			if (address.isDefault) {
-				// Unset other default addresses if this one is set as default
-				user.addresses = user.addresses.map(addr => ({ ...addr, isDefault: false }));
-			}
-			user.addresses.push(address);
-		} else {
-			// Create user if they don't exist (for seeding purposes if needed)
-			const newUser: User = {
-				id: address.userId,
-				name: "Sample User",
-				email: `${address.userId}@example.com`,
-				createdAt: new Date(),
-				addresses: [address]
-			};
-			this.users.set(newUser.id, newUser);
+
+		// If this address is set as default, unset all other default addresses for this user
+		if (address.isDefault) {
+			const userAddresses = Array.from(this.addresses.values()).filter(
+				(addr) => addr.userId === address.userId
+			);
+			userAddresses.forEach((addr) => {
+				if (addr.isDefault) {
+					const updatedAddr = { ...addr, isDefault: false };
+					this.addresses.set(addr.id, updatedAddr);
+				}
+			});
 		}
+
+		this.addresses.set(id, address);
 		return address;
 	}
 
 	async updateAddress(id: string, insertAddress: InsertAddress): Promise<Address | undefined> {
-		const userId = insertAddress.userId;
-		const user = this.users.get(userId);
-
-		if (user) {
-			let addressToUpdate = user.addresses.find(addr => addr.id === id);
-			if (!addressToUpdate) return undefined;
-
-			// Handle default status update
-			if (insertAddress.isDefault && !addressToUpdate.isDefault) {
-				user.addresses = user.addresses.map(addr => ({ ...addr, isDefault: false }));
-			}
-
-			// Update the address
-			const updatedAddress = { ...addressToUpdate, ...insertAddress };
-			const index = user.addresses.indexOf(addressToUpdate);
-			user.addresses[index] = updatedAddress;
-
-			this.users.set(userId, user); // Update user in the map
-			return updatedAddress;
+		const existingAddress = this.addresses.get(id);
+		if (!existingAddress) {
+			return undefined;
 		}
-		return undefined;
+
+		// If this address is being set as default, unset all other default addresses for this user
+		if (insertAddress.isDefault && !existingAddress.isDefault) {
+			const userAddresses = Array.from(this.addresses.values()).filter(
+				(addr) => addr.userId === existingAddress.userId
+			);
+			userAddresses.forEach((addr) => {
+				if (addr.isDefault) {
+					const updatedAddr = { ...addr, isDefault: false };
+					this.addresses.set(addr.id, updatedAddr);
+				}
+			});
+		}
+
+		const updatedAddress: Address = {
+			...existingAddress,
+			...insertAddress,
+			id,
+		};
+		this.addresses.set(id, updatedAddress);
+		return updatedAddress;
 	}
 
 	async deleteAddress(id: string): Promise<boolean> {
-		let deleted = false;
-		for (const user of this.users.values()) {
-			const initialLength = user.addresses.length;
-			user.addresses = user.addresses.filter(addr => addr.id !== id);
-			if (user.addresses.length < initialLength) {
-				this.users.set(user.id, user); // Update user in the map
-				deleted = true;
-				break; // Assuming an address ID is unique across all users
-			}
-		}
-		return deleted;
+		return this.addresses.delete(id);
 	}
 }
 

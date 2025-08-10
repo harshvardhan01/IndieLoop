@@ -69,6 +69,18 @@ export const orders = pgTable("orders", {
 	currency: text("currency").notNull().default("INR"),
 	status: text("status").notNull().default("pending"),
 	trackingNumber: text("tracking_number"),
+	shippingAddress: jsonb("shipping_address")
+		.$type<{
+			firstName: string;
+			lastName: string;
+			streetAddress: string;
+			city: string;
+			state: string;
+			zipCode: string;
+			country: string;
+			phone?: string;
+		}>(),
+	paymentMethod: text("payment_method").notNull().default("cod"),
 	createdAt: timestamp("created_at").defaultNow(),
 });
 
