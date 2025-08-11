@@ -8,7 +8,7 @@ export default function Footer() {
 					{/* Company Info */}
 					<div>
 						<h3 className="text-2xl font-display font-bold mb-4">
-							IndieLoop
+							IndieLoopStudio
 						</h3>
 						<p className="text-craft-tan">
 							Connecting you with authentic, handcrafted products
@@ -83,7 +83,7 @@ export default function Footer() {
 					<div>
 						<h4 className="font-semibold mb-4">Get in Touch</h4>
 						<div className="space-y-2 text-craft-tan">
-							<p>Email: support@indieloop.com</p>
+							<p>Email: support@indieloopstudio.com</p>
 							<p>Phone: +91 9460392689</p>
 							<p>Hours: Mon-Fri 9AM-6PM IST</p>
 						</div>
@@ -93,7 +93,7 @@ export default function Footer() {
 				<div className="border-t border-gray-800 mt-8 pt-8">
 					<div className="flex flex-col md:flex-row justify-between items-center">
 						<p className="space-y-2 text-craft-tan">
-							© 2025 IndieLoop. All rights reserved.
+							© 2025 IndieLoopStudio. All rights reserved.
 						</p>
 						<div className="flex space-x-6 mt-4 md:mt-0">
 							<span className="space-y-2 text-craft-tan">

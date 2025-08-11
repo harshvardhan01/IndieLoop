@@ -17,9 +17,9 @@ export default function Privacy() {
 								Information We Collect
 							</h2>
 							<p className="mb-4">
-								When you use IndieLoop, we collect information
-								that you provide directly to us, such as when
-								you:
+								When you use IndieLoopStudio, we collect
+								information that you provide directly to us,
+								such as when you:
 							</p>
 							<ul className="list-disc pl-6 mb-4 space-y-2">
 								<li>Create an account or profile</li>
@@ -139,7 +139,7 @@ export default function Privacy() {
 							<div className="bg-gray-50 p-4 rounded-lg">
 								<p>
 									<strong>Email:</strong>{" "}
-									privacy@indieloop.com
+									privacy@indieloopstudio.com
 								</p>
 								<p>
 									<strong>Phone:</strong> +91 9460382689

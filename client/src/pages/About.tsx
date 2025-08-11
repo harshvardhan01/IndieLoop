@@ -6,7 +6,7 @@ export default function About() {
 			<div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 				<div className="text-center mb-12">
 					<h1 className="text-4xl font-display font-bold text-craft-brown mb-4">
-						About IndieLoop
+						About IndieLoopStudio
 					</h1>
 					<p className="text-xl text-gray-600 max-w-2xl mx-auto">
 						Connecting customers with talented artisans and their
@@ -56,7 +56,7 @@ export default function About() {
 					</h2>
 					<div className="prose prose-lg text-gray-700">
 						<p className="mb-4">
-							IndieLoop was born from a simple belief: that
+							IndieLoopStudio was born from a simple belief: that
 							authentic, handcrafted goods tell stories that
 							mass-produced items never could. Every wooden bowl
 							carries the grain of its tree and the hands that
@@ -71,8 +71,8 @@ export default function About() {
 							consumers who value authenticity and quality.
 						</p>
 						<p>
-							When you shop with IndieLoop, you're not just buying
-							a product – you're supporting a craftsperson,
+							When you shop with IndieLoopStudio, you're not just
+							buying a product – you're supporting a craftsperson,
 							preserving a tradition, and bringing a piece of
 							authentic artistry into your life.
 						</p>

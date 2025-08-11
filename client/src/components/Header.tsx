@@ -1,6 +1,16 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { User, ShoppingCart, Menu, X, ChevronDown, Package, MessageSquare, MapPin, LogOut } from "lucide-react";
+import {
+	User,
+	ShoppingCart,
+	Menu,
+	X,
+	ChevronDown,
+	Package,
+	MessageSquare,
+	MapPin,
+	LogOut,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
@@ -48,7 +58,7 @@ export default function Header() {
 							<Link href="/">
 								<div className="cursor-pointer">
 									<h1 className="text-2xl font-display font-bold text-craft-brown">
-										IndieLoop
+										IndieLoopStudio
 									</h1>
 									<p className="text-xs text-gray-600">
 										Artisan Crafted
@@ -56,8 +66,6 @@ export default function Header() {
 								</div>
 							</Link>
 						</div>
-
-
 
 						{/* Right Navigation - Desktop */}
 						<div className="hidden md:flex items-center space-x-4">
@@ -67,56 +75,76 @@ export default function Header() {
 								<div className="flex items-center space-x-4">
 									<DropdownMenu>
 										<DropdownMenuTrigger asChild>
-											<Button variant="ghost" className="flex items-center gap-2">
+											<Button
+												variant="ghost"
+												className="flex items-center gap-2">
 												<User className="h-4 w-4" />
-												<span className="hidden sm:inline">Hello, {user?.firstName}</span>
+												<span className="hidden sm:inline">
+													Hello, {user?.firstName}
+												</span>
 												<ChevronDown className="h-4 w-4" />
 											</Button>
 										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end" className="w-56">
+										<DropdownMenuContent
+											align="end"
+											className="w-56">
 											<DropdownMenuItem asChild>
-												<Link href="/orders" className="flex items-center gap-2 w-full">
+												<Link
+													href="/orders"
+													className="flex items-center gap-2 w-full">
 													<Package className="h-4 w-4" />
 													My Orders
 												</Link>
 											</DropdownMenuItem>
 											<DropdownMenuItem asChild>
-												<Link href="/addresses" className="flex items-center gap-2 w-full">
+												<Link
+													href="/addresses"
+													className="flex items-center gap-2 w-full">
 													<MapPin className="h-4 w-4" />
 													My Addresses
 												</Link>
 											</DropdownMenuItem>
 											<DropdownMenuSeparator />
-											<DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2">
+											<DropdownMenuItem
+												onClick={handleLogout}
+												className="flex items-center gap-2">
 												<LogOut className="h-4 w-4" />
 												Logout
 											</DropdownMenuItem>
 										</DropdownMenuContent>
 									</DropdownMenu>
-									
+
 									{user?.isAdmin && (
 										<DropdownMenu>
 											<DropdownMenuTrigger asChild>
-												<Button variant="ghost" className="flex items-center gap-1">
+												<Button
+													variant="ghost"
+													className="flex items-center gap-1">
 													Admin
 													<ChevronDown className="h-4 w-4" />
 												</Button>
 											</DropdownMenuTrigger>
 											<DropdownMenuContent align="end">
 												<DropdownMenuItem asChild>
-													<Link href="/admin/products" className="flex items-center gap-2 w-full">
+													<Link
+														href="/admin/products"
+														className="flex items-center gap-2 w-full">
 														<Package className="h-4 w-4" />
 														Products
 													</Link>
 												</DropdownMenuItem>
 												<DropdownMenuItem asChild>
-													<Link href="/admin/orders" className="flex items-center gap-2 w-full">
+													<Link
+														href="/admin/orders"
+														className="flex items-center gap-2 w-full">
 														<ShoppingCart className="h-4 w-4" />
 														Orders
 													</Link>
 												</DropdownMenuItem>
 												<DropdownMenuItem asChild>
-													<Link href="/admin/support" className="flex items-center gap-2 w-full">
+													<Link
+														href="/admin/support"
+														className="flex items-center gap-2 w-full">
 														<MessageSquare className="h-4 w-4" />
 														Support
 													</Link>
@@ -162,8 +190,6 @@ export default function Header() {
 							</Button>
 						</div>
 					</div>
-
-
 
 					{/* Mobile Currency Selector - Always Visible */}
 					<div className="md:hidden border-t border-gray-200 py-2">

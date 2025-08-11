@@ -17,9 +17,9 @@ export default function Terms() {
 								Acceptance of Terms
 							</h2>
 							<p className="mb-4">
-								By accessing and using IndieLoop, you accept and
-								agree to be bound by the terms and provision of
-								this agreement.
+								By accessing and using IndieLoopStudio, you
+								accept and agree to be bound by the terms and
+								provision of this agreement.
 							</p>
 						</section>
 
@@ -29,10 +29,11 @@ export default function Terms() {
 							</h2>
 							<p className="mb-4">
 								Permission is granted to temporarily download
-								one copy of IndieLoop materials for personal,
-								non-commercial transitory viewing only. This is
-								the grant of a license, not a transfer of title,
-								and under this license you may not:
+								one copy of IndieLoopStudio materials for
+								personal, non-commercial transitory viewing
+								only. This is the grant of a license, not a
+								transfer of title, and under this license you
+								may not:
 							</p>
 							<ul className="list-disc pl-6 mb-4 space-y-2">
 								<li>Modify or copy the materials</li>
@@ -147,13 +148,13 @@ export default function Terms() {
 								Disclaimer
 							</h2>
 							<p className="mb-4">
-								The materials on IndieLoop are provided on an
-								'as is' basis. IndieLoop makes no warranties,
-								expressed or implied, and hereby disclaims and
-								negates all other warranties including, without
-								limitation, implied warranties of
-								merchantability, fitness for a particular
-								purpose, or non-infringement.
+								The materials on IndieLoopStudio are provided on
+								an 'as is' basis. IndieLoopStudio makes no
+								warranties, expressed or implied, and hereby
+								disclaims and negates all other warranties
+								including, without limitation, implied
+								warranties of merchantability, fitness for a
+								particular purpose, or non-infringement.
 							</p>
 						</section>
 
@@ -162,12 +163,12 @@ export default function Terms() {
 								Limitations
 							</h2>
 							<p className="mb-4">
-								In no event shall IndieLoop or its suppliers be
-								liable for any damages (including, without
-								limitation, damages for loss of data or profit,
-								or due to business interruption) arising out of
-								the use or inability to use the materials on
-								IndieLoop.
+								In no event shall IndieLoopStudio or its
+								suppliers be liable for any damages (including,
+								without limitation, damages for loss of data or
+								profit, or due to business interruption) arising
+								out of the use or inability to use the materials
+								on IndieLoopStudio.
 							</p>
 						</section>
 
@@ -181,7 +182,8 @@ export default function Terms() {
 							</p>
 							<div className="bg-gray-50 p-4 rounded-lg">
 								<p>
-									<strong>Email:</strong> legal@indieloop.com
+									<strong>Email:</strong>{" "}
+									legal@indieloopstudio.com
 								</p>
 								<p>
 									<strong>Phone:</strong> +91 9460382689

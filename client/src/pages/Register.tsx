@@ -50,7 +50,7 @@ export default function Register() {
 		onSuccess: (data) => {
 			localStorage.setItem("sessionId", data.sessionId);
 			toast({
-				title: "Welcome to IndieLoop!",
+				title: "Welcome to IndieLoopStudio!",
 				description: "Your account has been created successfully.",
 			});
 			setLocation("/");
@@ -73,7 +73,7 @@ export default function Register() {
 			<div className="max-w-md w-full space-y-8">
 				<div className="text-center">
 					<h1 className="text-3xl font-display font-bold text-craft-brown">
-						IndieLoop
+						IndieLoopStudio
 					</h1>
 					<p className="text-sm text-gray-600 mt-1">
 						Artisan Crafted
@@ -83,7 +83,7 @@ export default function Register() {
 				<Card className="shadow-lg">
 					<CardHeader className="text-center">
 						<CardTitle className="text-2xl font-display font-bold text-craft-brown">
-							Join IndieLoop
+							Join IndieLoopStudio
 						</CardTitle>
 						<CardDescription>
 							Create your account to start supporting artisans

@@ -37,7 +37,10 @@ export interface IStorage {
 		productData: InsertProduct
 	): Promise<Product | null>;
 	deleteProduct(id: string): Promise<boolean>;
-	toggleProductFeatured(id: string, featured: boolean): Promise<Product | null>; // Added for admin control
+	toggleProductFeatured(
+		id: string,
+		featured: boolean
+	): Promise<Product | null>; // Added for admin control
 
 	// Review operations
 	getProductReviews(productId: string): Promise<Review[]>;
@@ -84,7 +87,10 @@ export interface IStorage {
 	// Address operations
 	getUserAddresses(userId: string): Promise<Address[]>;
 	createAddress(addressData: InsertAddress): Promise<Address>;
-	updateAddress(id: string, addressData: InsertAddress): Promise<Address | undefined>;
+	updateAddress(
+		id: string,
+		addressData: InsertAddress
+	): Promise<Address | undefined>;
 	deleteAddress(id: string): Promise<boolean>;
 }
 
@@ -106,13 +112,16 @@ export class MemStorage implements IStorage {
 		const sampleProducts = [
 			{
 				name: "Handwoven Silk Scarf",
-				description: "Beautiful handwoven silk scarf with traditional patterns",
+				description:
+					"Beautiful handwoven silk scarf with traditional patterns",
 				originalPrice: "2500",
 				discountedPrice: "2000",
 				category: "Textiles",
 				material: "Silk",
 				countryOfOrigin: "India",
-				images: ["https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=400"],
+				images: [
+					"https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=400",
+				],
 				dimensions: { length: 71, width: 28, unit: "inch" as const },
 				weight: { value: 150, unit: "g" as const },
 				inStock: true,
@@ -126,8 +135,15 @@ export class MemStorage implements IStorage {
 				category: "Home & Kitchen",
 				material: "Wood",
 				countryOfOrigin: "India",
-				images: ["https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"],
-				dimensions: { length: 10, width: 10, height: 4, unit: "inch" as const },
+				images: [
+					"https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+				],
+				dimensions: {
+					length: 10,
+					width: 10,
+					height: 4,
+					unit: "inch" as const,
+				},
 				weight: { value: 400, unit: "g" as const },
 				inStock: true,
 				featured: false,
@@ -140,22 +156,37 @@ export class MemStorage implements IStorage {
 				category: "Home & Kitchen",
 				material: "Ceramic",
 				countryOfOrigin: "India",
-				images: ["https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400"],
-				dimensions: { length: 10, width: 10, height: 1, unit: "inch" as const },
+				images: [
+					"https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+				],
+				dimensions: {
+					length: 10,
+					width: 10,
+					height: 1,
+					unit: "inch" as const,
+				},
 				weight: { value: 800, unit: "g" as const },
 				inStock: true,
 				featured: true,
 			},
 			{
 				name: "Leather Handmade Wallet",
-				description: "Premium leather wallet with hand-stitched details",
+				description:
+					"Premium leather wallet with hand-stitched details",
 				originalPrice: "1800",
 				discountedPrice: "1440",
 				category: "Accessories",
 				material: "Leather",
 				countryOfOrigin: "India",
-				images: ["https://images.unsplash.com/photo-1627123424574-724758594e93?w=400"],
-				dimensions: { length: 4, width: 3, height: 1, unit: "inch" as const },
+				images: [
+					"https://images.unsplash.com/photo-1627123424574-724758594e93?w=400",
+				],
+				dimensions: {
+					length: 4,
+					width: 3,
+					height: 1,
+					unit: "inch" as const,
+				},
 				weight: { value: 100, unit: "g" as const },
 				inStock: true,
 				featured: false,
@@ -167,12 +198,19 @@ export class MemStorage implements IStorage {
 				category: "Home & Kitchen",
 				material: "Bamboo",
 				countryOfOrigin: "India",
-				images: ["https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400"],
-				dimensions: { length: 12, width: 8, height: 6, unit: "inch" as const },
+				images: [
+					"https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+				],
+				dimensions: {
+					length: 12,
+					width: 8,
+					height: 6,
+					unit: "inch" as const,
+				},
 				weight: { value: 300, unit: "g" as const },
 				inStock: true,
 				featured: false,
-			}
+			},
 		];
 
 		// Create products
@@ -182,7 +220,7 @@ export class MemStorage implements IStorage {
 
 		// Add a sample admin user
 		this.createUser({
-			email: "admin@indieloop.com",
+			email: "admin@indieloopstudio.com",
 			password: "admin123",
 			firstName: "Admin",
 			lastName: "User",
@@ -227,12 +265,14 @@ export class MemStorage implements IStorage {
 	}
 
 	// Product operations
-	async getProducts(filters: {
-		country?: string;
-		material?: string;
-		category?: string;
-		search?: string;
-	} = {}): Promise<Product[]> {
+	async getProducts(
+		filters: {
+			country?: string;
+			material?: string;
+			category?: string;
+			search?: string;
+		} = {}
+	): Promise<Product[]> {
 		let products = Array.from(this.products.values());
 
 		// Search functionality - search in name, description, category, and material
@@ -328,7 +368,10 @@ export class MemStorage implements IStorage {
 		return this.products.delete(id);
 	}
 
-	async toggleProductFeatured(id: string, featured: boolean): Promise<Product | null> {
+	async toggleProductFeatured(
+		id: string,
+		featured: boolean
+	): Promise<Product | null> {
 		const existingProduct = this.products.get(id);
 		if (!existingProduct) {
 			return null;
@@ -537,7 +580,10 @@ export class MemStorage implements IStorage {
 		return address;
 	}
 
-	async updateAddress(id: string, insertAddress: InsertAddress): Promise<Address | undefined> {
+	async updateAddress(
+		id: string,
+		insertAddress: InsertAddress
+	): Promise<Address | undefined> {
 		const existingAddress = this.addresses.get(id);
 		if (!existingAddress) {
 			return undefined;

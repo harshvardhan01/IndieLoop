@@ -1,8 +1,8 @@
-# IndieLoop - Handcrafted E-commerce Platform
+# IndieLoopStudio - Handcrafted E-commerce Platform
 
 ## Overview
 
-IndieLoop is a full-stack e-commerce application designed to connect customers with artisans. The platform allows customers to browse and purchase handcrafted products from around the world, supporting makers while providing an authentic shopping experience. The application features product browsing with filtering capabilities, user authentication, shopping cart functionality, order management, and customer support.
+IndieLoopStudio is a full-stack e-commerce application designed to connect customers with artisans. The platform allows customers to browse and purchase handcrafted products from around the world, supporting makers while providing an authentic shopping experience. The application features product browsing with filtering capabilities, user authentication, shopping cart functionality, order management, and customer support.
 
 ## User Preferences
 

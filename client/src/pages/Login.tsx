@@ -68,7 +68,7 @@ export default function Login() {
 			<div className="max-w-md w-full space-y-8">
 				<div className="text-center">
 					<h1 className="text-3xl font-display font-bold text-craft-brown">
-						IndieLoop
+						IndieLoopStudio
 					</h1>
 					<p className="text-sm text-gray-600 mt-1">
 						Artisan Crafted
