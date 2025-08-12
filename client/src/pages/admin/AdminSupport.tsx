@@ -75,13 +75,16 @@ export default function AdminSupport() {
 				message.status === filterStatus;
 			const matchesSearch =
 				searchTerm === "" ||
-				message.subject
-					.toLowerCase()
-					.includes(searchTerm.toLowerCase()) ||
-				message.message
-					.toLowerCase()
-					.includes(searchTerm.toLowerCase()) ||
-				message.email.toLowerCase().includes(searchTerm.toLowerCase());
+				(message.subject && 
+					message.subject
+						.toLowerCase()
+						.includes(searchTerm.toLowerCase())) ||
+				(message.message && 
+					message.message
+						.toLowerCase()
+						.includes(searchTerm.toLowerCase())) ||
+				(message.email && 
+					message.email.toLowerCase().includes(searchTerm.toLowerCase()));
 			return matchesStatus && matchesSearch;
 		});
 	}, [messages, filterStatus, searchTerm]);

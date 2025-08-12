@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
+import { Link, useNavigate } from "react-router-dom";
 
 interface CartSidebarProps {
   isOpen: boolean;
@@ -19,7 +19,7 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
@@ -40,7 +40,7 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       toast({ title: "Order placed successfully!", description: "Thank you for your purchase." });
       onClose();
-      setLocation("/orders");
+      navigate("/orders");
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to place order", variant: "destructive" });
@@ -50,7 +50,7 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
   const handleCheckout = () => {
     if (!isAuthenticated) {
       onClose();
-      setLocation("/login");
+      navigate("/login");
       return;
     }
     checkoutMutation.mutate();
@@ -148,7 +148,7 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
             <Button
               onClick={() => {
                 onClose();
-                window.location.href = "/cart";
+                navigate("/cart");
               }}
               className="w-full bg-craft-brown hover:bg-craft-brown/90 mb-2"
             >

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useNavigate } from "react-router-dom";
 import {
 	User,
 	ShoppingCart,
@@ -29,7 +29,7 @@ export default function Header() {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [isCartOpen, setIsCartOpen] = useState(false);
 	const [isSupportOpen, setIsSupportOpen] = useState(false);
-	const [, setLocation] = useLocation();
+	const navigate = useNavigate();
 	const { isAuthenticated, user } = useAuth();
 	const { totalItems } = useCart();
 
@@ -55,7 +55,7 @@ export default function Header() {
 					<div className="flex justify-between items-center h-16">
 						{/* Logo */}
 						<div className="flex-shrink-0">
-							<Link href="/">
+							<Link to="/">
 								<div className="cursor-pointer">
 									<h1 className="text-2xl font-display font-bold text-craft-brown">
 										IndieLoopStudio
@@ -90,7 +90,7 @@ export default function Header() {
 											className="w-56">
 											<DropdownMenuItem asChild>
 												<Link
-													href="/orders"
+													to="/orders"
 													className="flex items-center gap-2 w-full">
 													<Package className="h-4 w-4" />
 													My Orders
@@ -98,7 +98,7 @@ export default function Header() {
 											</DropdownMenuItem>
 											<DropdownMenuItem asChild>
 												<Link
-													href="/addresses"
+													to="/addresses"
 													className="flex items-center gap-2 w-full">
 													<MapPin className="h-4 w-4" />
 													My Addresses
@@ -127,7 +127,7 @@ export default function Header() {
 											<DropdownMenuContent align="end">
 												<DropdownMenuItem asChild>
 													<Link
-														href="/admin/products"
+														to="/admin/products"
 														className="flex items-center gap-2 w-full">
 														<Package className="h-4 w-4" />
 														Products
@@ -135,7 +135,7 @@ export default function Header() {
 												</DropdownMenuItem>
 												<DropdownMenuItem asChild>
 													<Link
-														href="/admin/orders"
+														to="/admin/orders"
 														className="flex items-center gap-2 w-full">
 														<ShoppingCart className="h-4 w-4" />
 														Orders
@@ -143,10 +143,18 @@ export default function Header() {
 												</DropdownMenuItem>
 												<DropdownMenuItem asChild>
 													<Link
-														href="/admin/support"
+														to="/admin/support"
 														className="flex items-center gap-2 w-full">
 														<MessageSquare className="h-4 w-4" />
 														Support
+													</Link>
+												</DropdownMenuItem>
+												<DropdownMenuItem asChild>
+													<Link
+														to="/admin/artisans"
+														className="flex items-center gap-2 w-full">
+														<User className="h-4 w-4" />
+														Artisans
 													</Link>
 												</DropdownMenuItem>
 											</DropdownMenuContent>
@@ -154,7 +162,7 @@ export default function Header() {
 									)}
 								</div>
 							) : (
-								<Link href="/login">
+								<Link to="/login">
 									<Button
 										variant="ghost"
 										className="text-gray-700 hover:text-craft-brown">
@@ -201,14 +209,12 @@ export default function Header() {
 					{isMenuOpen && (
 						<div className="md:hidden border-t border-gray-200 py-4">
 							<div className="flex flex-col space-y-4">
-								{/* <CurrencySelector /> */}
-
 								{isAuthenticated ? (
 									<>
 										<div className="text-sm text-gray-700">
 											Hello, {user?.firstName}
 										</div>
-										<Link href="/orders">
+										<Link to="/orders">
 											<Button
 												variant="ghost"
 												className="justify-start w-full">
@@ -216,7 +222,7 @@ export default function Header() {
 												My Orders
 											</Button>
 										</Link>
-										<Link href="/addresses">
+										<Link to="/addresses">
 											<Button
 												variant="ghost"
 												className="justify-start w-full">
@@ -229,7 +235,7 @@ export default function Header() {
 												<div className="text-sm text-gray-600 font-medium mb-2 px-2">
 													Admin
 												</div>
-												<Link href="/admin/products">
+												<Link to="/admin/products">
 													<Button
 														variant="ghost"
 														className="justify-start w-full pl-4">
@@ -237,7 +243,7 @@ export default function Header() {
 														Products
 													</Button>
 												</Link>
-												<Link href="/admin/orders">
+												<Link to="/admin/orders">
 													<Button
 														variant="ghost"
 														className="justify-start w-full pl-4">
@@ -245,12 +251,20 @@ export default function Header() {
 														Orders
 													</Button>
 												</Link>
-												<Link href="/admin/support">
+												<Link to="/admin/support">
 													<Button
 														variant="ghost"
 														className="justify-start w-full pl-4">
 														<MessageSquare className="h-4 w-4 mr-2" />
 														Support
+													</Button>
+												</Link>
+												<Link to="/admin/artisans">
+													<Button
+														variant="ghost"
+														className="justify-start w-full pl-4">
+														<User className="h-4 w-4 mr-2" />
+														Artisans
 													</Button>
 												</Link>
 											</div>
@@ -264,7 +278,7 @@ export default function Header() {
 										</Button>
 									</>
 								) : (
-									<Link href="/login">
+									<Link to="/login">
 										<Button
 											variant="ghost"
 											className="justify-start w-full">

@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation } from "react-router-dom";
 import { Grid, List, Filter, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,8 +18,8 @@ import ProductCard from "@/components/ProductCard";
 import { Product } from "@shared/schema";
 
 export default function Collections() {
-	const [location] = useLocation();
-	const searchParams = new URLSearchParams(location.split("?")[1] || "");
+	const location = useLocation();
+	const searchParams = new URLSearchParams(location.search);
 	const initialSearch = searchParams.get("search") || "";
 
 	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");

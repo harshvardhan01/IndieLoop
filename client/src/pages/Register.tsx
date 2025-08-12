@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function Register() {
-	const [, setLocation] = useLocation();
+	const navigate = useNavigate();
 	const { toast } = useToast();
 
 	const form = useForm<RegisterData>({
@@ -53,7 +53,7 @@ export default function Register() {
 				title: "Welcome to IndieLoopStudio!",
 				description: "Your account has been created successfully.",
 			});
-			setLocation("/");
+			navigate("/");
 		},
 		onError: (error: Error) => {
 			toast({
@@ -217,7 +217,7 @@ export default function Register() {
 						<div className="mt-6 text-center">
 							<p className="text-sm text-gray-600">
 								Already have an account?{" "}
-								<Link href="/login">
+								<Link to="/login">
 									<Button
 										variant="link"
 										className="p-0 text-craft-brown font-medium hover:underline">

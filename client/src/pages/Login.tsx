@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function Login() {
-	const [, setLocation] = useLocation();
+	const navigate = useNavigate();
 	const { toast } = useToast();
 
 	const form = useForm<LoginData>({
@@ -48,7 +48,7 @@ export default function Login() {
 				title: "Welcome back!",
 				description: "You have successfully logged in.",
 			});
-			setLocation("/");
+			navigate("/");
 		},
 		onError: (error: Error) => {
 			toast({
@@ -178,7 +178,7 @@ export default function Login() {
 						<div className="mt-6 text-center">
 							<p className="text-sm text-gray-600">
 								Don't have an account?{" "}
-								<Link href="/register">
+								<Link to="/register">
 									<Button
 										variant="link"
 										className="p-0 text-craft-brown font-medium hover:underline">

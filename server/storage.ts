@@ -1,18 +1,28 @@
 import {
+	users,
+	products,
+	reviews,
+	orders,
+	cartItems,
+	supportMessages,
+	addresses,
+	artisans,
 	type User,
-	type InsertUser,
 	type Product,
-	type InsertProduct,
 	type Review,
-	type InsertReview,
 	type Order,
-	type InsertOrder,
 	type CartItem,
-	type InsertCartItem,
 	type SupportMessage,
+	type Address,
+	type Artisan,
+	type InsertUser,
+	type InsertProduct,
+	type InsertReview,
+	type InsertOrder,
+	type InsertCartItem,
 	type InsertSupportMessage,
-	type Address, // Added for address type
-	type InsertAddress, // Added for insert address type
+	type InsertAddress,
+	type InsertArtisan,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { eq, desc } from "drizzle-orm"; // Added for drizzle functions
@@ -28,6 +38,8 @@ export interface IStorage {
 	getProducts(filters?: {
 		country?: string;
 		material?: string;
+		category?: string;
+		search?: string;
 	}): Promise<Product[]>;
 	getFeaturedProducts(): Promise<Product[]>; // Added for featured products
 	getProduct(id: string): Promise<Product | undefined>;
@@ -92,9 +104,22 @@ export interface IStorage {
 		addressData: InsertAddress
 	): Promise<Address | undefined>;
 	deleteAddress(id: string): Promise<boolean>;
+
+	// Artisan operations
+	getArtisans(): Promise<Artisan[]>;
+	getArtisanById(artisanId: string): Promise<Artisan | null>;
+	createArtisan(artisanData: InsertArtisan): Promise<Artisan>;
+	updateArtisan(
+		artisanId: string,
+		artisanData: InsertArtisan
+	): Promise<Artisan>;
+	deleteArtisan(artisanId: string): Promise<void>;
+	getProductsByArtisanId(artisanId: string): Promise<Product[]>;
 }
 
 export class MemStorage implements IStorage {
+	// Mocking the database with in-memory maps for demonstration purposes.
+	// In a real application, you would interact with a database like PostgreSQL using Drizzle ORM.
 	private users: Map<string, User> = new Map();
 	private products: Map<string, Product> = new Map();
 	private reviews: Map<string, Review> = new Map();
@@ -102,139 +127,161 @@ export class MemStorage implements IStorage {
 	private cartItems: Map<string, CartItem> = new Map();
 	private supportMessages: Map<string, SupportMessage> = new Map();
 	private addresses: Map<string, Address> = new Map();
+	private artisans = new Map<string, Artisan>();
 
 	constructor() {
-		this.seedData(); // Initialize with sample data
+		// Initialize with sample data
+		this.initializeSampleData();
+		this.initializeSampleArtisans();
 	}
 
-	private seedData() {
-		// Add sample products
-		const sampleProducts = [
+	private initializeSampleData() {
+		// Sample products with featured status
+		const sampleProducts: Product[] = [
 			{
-				name: "Handwoven Silk Scarf",
+				id: "sample-1",
+				name: "Handwoven Scarf",
 				description:
-					"Beautiful handwoven silk scarf with traditional patterns",
+					"Beautiful handwoven scarf made from organic cotton",
 				originalPrice: "2500",
 				discountedPrice: "2000",
+				images: [
+					"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRgU82ITH6pk1Sogoc8jiU7kgYkKc1v_3wKhg&s",
+				],
 				category: "Textiles",
-				material: "Silk",
-				countryOfOrigin: "India",
-				images: [
-					"https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=400",
-				],
-				dimensions: { length: 71, width: 28, unit: "inch" as const },
-				weight: { value: 150, unit: "g" as const },
-				inStock: true,
+				material: "Cotton",
+				countryOfOrigin: "India", // Corrected from 'country' to 'countryOfOrigin'
+				dimensions: { length: 180, width: 30, height: 0.5, unit: "cm" },
+				weight: { value: 150, unit: "g" },
+				inStock: true, // Corrected from 'stock' to 'inStock'
 				featured: true,
+				asin: "HSC001",
+				artisanId: "artisan-1",
 			},
 			{
-				name: "Wooden Hand Carved Bowl",
-				description: "Artisan crafted wooden bowl perfect for serving",
-				originalPrice: "1500",
-				discountedPrice: "1200",
-				category: "Home & Kitchen",
-				material: "Wood",
-				countryOfOrigin: "India",
+				id: "sample-2",
+				name: "Ceramic Bowl",
+				description: "Hand-thrown ceramic bowl with traditional glaze",
+				originalPrice: "1800",
+				discountedPrice: "1500",
 				images: [
-					"https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+					"https://market99.com/cdn/shop/files/bowls-glossy-finish-royal-blue-ceramic-set-of-2-300-ml-bowls-1-29021507485866.jpg?v=1737462148",
 				],
-				dimensions: {
-					length: 10,
-					width: 10,
-					height: 4,
-					unit: "inch" as const,
-				},
-				weight: { value: 400, unit: "g" as const },
-				inStock: true,
-				featured: false,
-			},
-			{
-				name: "Ceramic Dinner Plate Set",
-				description: "Hand-painted ceramic plates with floral motifs",
-				originalPrice: "3000",
-				discountedPrice: "2400",
 				category: "Home & Kitchen",
 				material: "Ceramic",
-				countryOfOrigin: "India",
-				images: [
-					"https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
-				],
-				dimensions: {
-					length: 10,
-					width: 10,
-					height: 1,
-					unit: "inch" as const,
-				},
-				weight: { value: 800, unit: "g" as const },
-				inStock: true,
+				countryOfOrigin: "Peru", // Corrected from 'country' to 'countryOfOrigin'
+				dimensions: { length: 15, width: 15, height: 8, unit: "cm" },
+				weight: { value: 300, unit: "g" },
+				inStock: true, // Corrected from 'stock' to 'inStock'
 				featured: true,
+				asin: "CBS002",
+				artisanId: "artisan-2",
 			},
 			{
-				name: "Leather Handmade Wallet",
+				id: "sample-3",
+				name: "Wooden Jewelry Box",
 				description:
-					"Premium leather wallet with hand-stitched details",
-				originalPrice: "1800",
-				discountedPrice: "1440",
+					"Intricately carved wooden jewelry box with multiple compartments",
+				originalPrice: "3200",
+				discountedPrice: "2800",
+				images: [
+					"https://www.woodsala.com/cdn/shop/files/MG_9060.jpg?v=1696077823&width=4000",
+				],
+				category: "Accessories",
+				material: "Wood",
+				countryOfOrigin: "Morocco", // Corrected from 'country' to 'countryOfOrigin'
+				dimensions: { length: 20, width: 15, height: 10, unit: "cm" },
+				weight: { value: 500, unit: "g" },
+				inStock: true, // Corrected from 'stock' to 'inStock'
+				featured: false,
+				asin: "WJB003",
+				artisanId: "artisan-1",
+			},
+			{
+				id: "sample-4",
+				name: "Leather Handbag",
+				description:
+					"Handcrafted leather handbag with traditional embossing",
+				originalPrice: "4500",
+				discountedPrice: "4000",
+				images: [
+					"https://craftandglory.in/cdn/shop/files/SON000021.jpg?v=1711024390&width=1946",
+				],
 				category: "Accessories",
 				material: "Leather",
-				countryOfOrigin: "India",
-				images: [
-					"https://images.unsplash.com/photo-1627123424574-724758594e93?w=400",
-				],
-				dimensions: {
-					length: 4,
-					width: 3,
-					height: 1,
-					unit: "inch" as const,
-				},
-				weight: { value: 100, unit: "g" as const },
-				inStock: true,
+				countryOfOrigin: "Guatemala", // Corrected from 'country' to 'countryOfOrigin'
+				dimensions: { length: 35, width: 12, height: 25, unit: "cm" },
+				weight: { value: 800, unit: "g" },
+				inStock: true, // Corrected from 'stock' to 'inStock'
 				featured: false,
+				asin: "LHB004",
+				artisanId: "artisan-2",
 			},
 			{
-				name: "Bamboo Storage Basket",
-				description: "Eco-friendly bamboo basket for storage",
+				id: "sample-5",
+				name: "Bamboo Cutting Board",
+				description:
+					"Eco-friendly bamboo cutting board with natural finish",
 				originalPrice: "1200",
+				discountedPrice: "1000",
+				images: [
+					"https://www.freshware.com/cdn/shop/products/30a751a22a6a4bf67004452ae0209178d46bd5e2f4c80978ac2536d10d55b594.jpg?v=1594437463",
+				],
 				category: "Home & Kitchen",
 				material: "Bamboo",
-				countryOfOrigin: "India",
-				images: [
-					"https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
-				],
-				dimensions: {
-					length: 12,
-					width: 8,
-					height: 6,
-					unit: "inch" as const,
-				},
-				weight: { value: 300, unit: "g" as const },
-				inStock: true,
+				countryOfOrigin: "Thailand", // Corrected from 'country' to 'countryOfOrigin'
+				dimensions: { length: 30, width: 20, height: 2, unit: "cm" },
+				weight: { value: 400, unit: "g" },
+				inStock: true, // Corrected from 'stock' to 'inStock'
 				featured: false,
+				asin: "BCB005",
+				artisanId: "artisan-1",
+			},
+			{
+				id: "sample-6",
+				name: "Textile Wall Hanging",
+				description:
+					"Colorful handwoven textile wall hanging with geometric patterns",
+				originalPrice: "3500",
+				discountedPrice: "3000",
+				images: [
+					"https://u-mercari-images.mercdn.net/photos/m70162559898_2.jpg",
+				],
+				category: "Textiles",
+				material: "Fabric",
+				countryOfOrigin: "India", // Corrected from 'country' to 'countryOfOrigin'
+				dimensions: { length: 60, width: 40, height: 1, unit: "cm" },
+				weight: { value: 200, unit: "g" },
+				inStock: true, // Corrected from 'stock' to 'inStock'
+				featured: true,
+				asin: "TWH006",
+				artisanId: "artisan-2",
 			},
 		];
 
-		// Create products
-		sampleProducts.forEach(async (productData) => {
-			await this.createProduct(productData);
-		});
+		sampleProducts.forEach((p) => this.products.set(p.id, p));
+	}
 
-		// Add a sample admin user
-		this.createUser({
-			email: "admin@indieloopstudio.com",
-			password: "admin123",
-			firstName: "Admin",
-			lastName: "User",
-			isAdmin: true,
-		});
-
-		// Add a sample regular user
-		this.createUser({
-			email: "user@example.com",
-			password: "user123",
-			firstName: "John",
-			lastName: "Doe",
-			isAdmin: false,
-		});
+	private initializeSampleArtisans(): void {
+		const sampleArtisans: Artisan[] = [
+			{
+				id: "artisan-1",
+				name: "Ravi Kumar",
+				bio: "A master weaver from Rajasthan, India, known for his intricate textile designs.",
+				website: "https://example.com/ravikumar",
+				countryOfOrigin: "India",
+				createdAt: new Date(),
+			},
+			{
+				id: "artisan-2",
+				name: "Sofia Alvarez",
+				bio: "A ceramic artist from Cusco, Peru, blending traditional techniques with modern aesthetics.",
+				website: "https://example.com/sofiaalvarez",
+				countryOfOrigin: "Peru",
+				createdAt: new Date(),
+			},
+		];
+		sampleArtisans.forEach((a) => this.artisans.set(a.id, a));
 	}
 
 	// Helper to generate ASIN
@@ -314,9 +361,52 @@ export class MemStorage implements IStorage {
 	}
 
 	async getFeaturedProducts(): Promise<Product[]> {
-		return Array.from(this.products.values()).filter(
-			(product) => product.featured
-		);
+		const products = await this.getProducts({});
+		let featured = products.filter((p) => p.featured);
+
+		// If no featured products, add some sample data
+		if (featured.length === 0) {
+			const sampleProducts = [
+				{
+					id: "sample-1",
+					name: "Handwoven Scarf",
+					description:
+						"Beautiful handwoven scarf made from organic cotton",
+					originalPrice: "2500",
+					discountedPrice: "2000",
+					images: [
+						"https://images.unsplash.com/photo-1544441893-675973e31985?w=400",
+					],
+					countryOfOrigin: "India",
+					material: "Cotton",
+					category: "Textile",
+					featured: true,
+					inStock: true,
+					asin: "HSC001",
+					artisanId: "artisan-1",
+				},
+				{
+					id: "sample-2",
+					name: "Ceramic Bowl Set",
+					description:
+						"Handcrafted ceramic bowls perfect for serving",
+					originalPrice: "3500",
+					images: [
+						"https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+					],
+					countryOfOrigin: "Peru",
+					material: "Ceramic",
+					category: "Home Decor",
+					featured: true,
+					inStock: true,
+					asin: "CBS002",
+					artisanId: "artisan-2",
+				},
+			];
+			return sampleProducts as Product[];
+		}
+
+		return featured;
 	}
 
 	async getProduct(id: string): Promise<Product | undefined> {
@@ -613,6 +703,54 @@ export class MemStorage implements IStorage {
 
 	async deleteAddress(id: string): Promise<boolean> {
 		return this.addresses.delete(id);
+	}
+
+	// Artisan methods
+	async getArtisans(): Promise<Artisan[]> {
+		return Array.from(this.artisans.values());
+	}
+
+	async getArtisanById(artisanId: string): Promise<Artisan | null> {
+		return this.artisans.get(artisanId) || null;
+	}
+
+	async createArtisan(artisanData: InsertArtisan): Promise<Artisan> {
+		const id = randomUUID();
+		const artisan: Artisan = {
+			...artisanData,
+			id,
+			createdAt: new Date(),
+		};
+		this.artisans.set(id, artisan);
+		console.log("Created artisan:", artisan);
+		return artisan;
+	}
+
+	async updateArtisan(
+		artisanId: string,
+		artisanData: InsertArtisan
+	): Promise<Artisan | null> {
+		const existingArtisan = this.artisans.get(artisanId);
+		if (!existingArtisan) {
+			return null;
+		}
+		const updatedArtisan: Artisan = {
+			...existingArtisan,
+			...artisanData,
+		};
+		this.artisans.set(artisanId, updatedArtisan);
+		console.log("Updated artisan:", updatedArtisan);
+		return updatedArtisan;
+	}
+
+	async deleteArtisan(artisanId: string): Promise<boolean> {
+		return this.artisans.delete(artisanId);
+	}
+
+	async getProductsByArtisanId(artisanId: string): Promise<Product[]> {
+		return Array.from(this.products.values()).filter(
+			(product) => product.artisanId === artisanId
+		);
 	}
 }
 

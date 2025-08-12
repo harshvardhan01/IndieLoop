@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal, ModalContent, ModalHeader, ModalTitle, ModalTrigger } from "@/components/ui/modal";
@@ -33,7 +33,7 @@ export default function Checkout() {
 	const { cartItems, totalAmount } = useCart();
 	const { formatPrice } = useCurrency();
 	const { toast } = useToast();
-	const [, setLocation] = useLocation();
+	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 
 	const [selectedAddressId, setSelectedAddressId] = useState<string>("");
@@ -178,7 +178,7 @@ export default function Checkout() {
 			// Clear cart from React Query cache
 			queryClient.setQueryData(["/api/cart"], []);
 			// Redirect to orders page
-			setLocation("/orders");
+			navigate("/orders");
 		},
 		onError: () => {
 			toast({

@@ -17,6 +17,7 @@ import {
 	insertAddressSchema,
 	loginSchema,
 	registerSchema,
+	insertArtisanSchema, // Import the new schema
 } from "@shared/schema";
 import { sendEmail } from "./config/email";
 
@@ -207,6 +208,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 			if (!product) {
 				return res.status(404).json({ message: "Product not found" });
 			}
+			// Fetch artisan details for the product
+			if (product.artisanId) {
+				const artisan = await storage.getArtisanById(product.artisanId);
+				product.artisan = artisan; // Attach artisan details to the product
+			}
 			res.json(product);
 		} catch (error) {
 			console.error("Error fetching product:", error);
@@ -230,6 +236,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 			const cartWithProducts = await Promise.all(
 				cartItems.map(async (item) => {
 					const product = await storage.getProduct(item.productId);
+					if (product && product.artisanId) {
+						const artisan = await storage.getArtisanById(product.artisanId);
+						product.artisan = artisan;
+					}
 					return { ...item, product };
 				})
 			);
@@ -388,12 +398,112 @@ ${messageData.message}
 	// Address routes
 	app.get("/api/addresses", requireAuth, async (req: any, res) => {
 		try {
-			const addresses = await storage.getUserAddresses(req.user.userId);
+			const addresses = await storage.getAddressesByUserId(req.user.userId);
 			res.json(addresses);
 		} catch (error) {
-			res.status(500).json({ message: "Failed to fetch addresses" });
+			console.error("Error fetching addresses:", error);
+			res.status(500).json({ message: "Internal server error" });
 		}
 	});
+
+	// Artisan routes
+	app.get("/api/artisans", async (req, res) => {
+		try {
+			const artisans = await storage.getArtisans();
+			res.json(artisans);
+		} catch (error) {
+			console.error("Error fetching artisans:", error);
+			res.status(500).json({ message: "Internal server error" });
+		}
+	});
+
+	app.get("/api/artisans/:id", async (req, res) => {
+		try {
+			const artisan = await storage.getArtisanById(req.params.id);
+			if (!artisan) {
+				return res.status(404).json({ message: "Artisan not found" });
+			}
+			res.json(artisan);
+		} catch (error) {
+			console.error("Error fetching artisan:", error);
+			res.status(500).json({ message: "Internal server error" });
+		}
+	});
+
+	app.get("/api/artisans/:id/products", async (req, res) => {
+		try {
+			const products = await storage.getProductsByArtisanId(req.params.id);
+			// Enhance products with artisan details
+			const enhancedProducts = await Promise.all(products.map(async (product) => {
+				if (product.artisanId) {
+					const artisan = await storage.getArtisanById(product.artisanId);
+					product.artisan = artisan;
+				}
+				return product;
+			}));
+			res.json(enhancedProducts);
+		} catch (error) {
+			console.error("Error fetching artisan products:", error);
+			res.status(500).json({ message: "Internal server error" });
+		}
+	});
+
+	app.post("/api/artisans", requireAuth, async (req, res) => {
+		try {
+			if (!req.user.isAdmin) {
+				return res.status(403).json({ message: "Admin access required" });
+			}
+
+			const artisanData = insertArtisanSchema.parse(req.body);
+			const artisan = await storage.createArtisan(artisanData);
+			res.status(201).json(artisan);
+		} catch (error) {
+			console.error("Error creating artisan:", error);
+			if (error instanceof z.ZodError) {
+				return res.status(400).json({ message: error.errors[0].message });
+			}
+			res.status(500).json({ message: "Internal server error" });
+		}
+	});
+
+	app.put("/api/artisans/:id", requireAuth, async (req, res) => {
+		try {
+			if (!req.user.isAdmin) {
+				return res.status(403).json({ message: "Admin access required" });
+			}
+
+			const artisanData = insertArtisanSchema.parse(req.body);
+			const artisan = await storage.updateArtisan(req.params.id, artisanData);
+			if (!artisan) {
+				return res.status(404).json({ message: "Artisan not found" });
+			}
+			res.json(artisan);
+		} catch (error) {
+			console.error("Error updating artisan:", error);
+			if (error instanceof z.ZodError) {
+				return res.status(400).json({ message: error.errors[0].message });
+			}
+			res.status(500).json({ message: "Internal server error" });
+		}
+	});
+
+	app.delete("/api/artisans/:id", requireAuth, async (req, res) => {
+		try {
+			if (!req.user.isAdmin) {
+				return res.status(403).json({ message: "Admin access required" });
+			}
+
+			const success = await storage.deleteArtisan(req.params.id);
+			if (!success) {
+				return res.status(404).json({ message: "Artisan not found" });
+			}
+			res.status(204).send();
+		} catch (error) {
+			console.error("Error deleting artisan:", error);
+			res.status(500).json({ message: "Internal server error" });
+		}
+	});
+
 
 	app.post("/api/addresses", requireAuth, async (req: any, res) => {
 		try {

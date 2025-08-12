@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import ProductCard from "@/components/ProductCard";
@@ -28,7 +28,7 @@ export default function Home() {
 							Discover unique, artisan-made products that tell a
 							story. Supporting artisans worldwide.
 						</p>
-						<Link href="/collections">
+						<Link to="/collections">
 							<Button className="bg-craft-brown text-white px-8 py-3 rounded-lg font-semibold hover:bg-craft-brown/90 transition-all transform hover:scale-105">
 								Explore Collections
 							</Button>
@@ -62,7 +62,7 @@ export default function Home() {
 							<p className="text-gray-600 mb-6">
 								Our team is curating the best products for you.
 							</p>
-							<Link href="/collections">
+							<Link to="/collections">
 								<Button className="bg-craft-brown hover:bg-craft-brown/90">
 									Browse All Products
 								</Button>
@@ -80,7 +80,7 @@ export default function Home() {
 								))}
 							</div>
 							<div className="text-center">
-								<Link href="/collections">
+								<Link to="/collections">
 									<Button className="bg-craft-brown hover:bg-craft-brown/90 px-8 py-3 text-lg">
 										Explore All Collections
 									</Button>

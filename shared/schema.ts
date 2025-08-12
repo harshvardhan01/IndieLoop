@@ -24,6 +24,20 @@ export const users = pgTable("users", {
 	createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const artisans = pgTable("artisans", {
+	id: varchar("id")
+		.primaryKey()
+		.default(sql`gen_random_uuid()`),
+	name: text("name").notNull(),
+	bio: text("bio").notNull(),
+	location: text("location").notNull(),
+	specialization: text("specialization").notNull(),
+	experience: text("experience").notNull(),
+	story: text("story").notNull(),
+	image: text("image"),
+	createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const products = pgTable("products", {
 	id: varchar("id")
 		.primaryKey()
@@ -39,6 +53,7 @@ export const products = pgTable("products", {
 	category: text("category").notNull(),
 	material: text("material").notNull(),
 	countryOfOrigin: text("country_of_origin").notNull(),
+	artisanId: varchar("artisan_id"),
 	images: jsonb("images").$type<string[]>().notNull(),
 	dimensions: jsonb("dimensions").$type<{
 		length?: number;
@@ -160,9 +175,14 @@ export const insertAddressSchema = createInsertSchema(addresses).omit({
 	id: true,
 	createdAt: true,
 });
+export const insertArtisanSchema = createInsertSchema(artisans).omit({
+	id: true,
+	createdAt: true,
+});
 
 // Types
 export type User = typeof users.$inferSelect;
+export type Artisan = typeof artisans.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
@@ -176,6 +196,7 @@ export type SupportMessage = typeof supportMessages.$inferSelect;
 export type InsertSupportMessage = z.infer<typeof insertSupportMessageSchema>;
 export type Address = typeof addresses.$inferSelect;
 export type InsertAddress = z.infer<typeof insertAddressSchema>;
+export type InsertArtisan = z.infer<typeof insertArtisanSchema>;
 
 // Auth schemas
 export const loginSchema = z.object({

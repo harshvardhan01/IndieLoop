@@ -1,13 +1,14 @@
-import { useParams } from "wouter";
+import { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Star, MapPin, ShoppingCart, Heart } from "lucide-react";
+import { Star, MapPin, ShoppingCart, Heart, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import ImageSlideshow from "@/components/ImageSlideshow";
 import { useCart } from "@/hooks/useCart";
 import { useCurrency } from "@/hooks/useCurrency";
-import { useState } from "react";
+import type { Artisan } from "@shared/schema";
 
 export default function ProductDetail() {
 	const { id } = useParams();
@@ -33,6 +34,17 @@ export default function ProductDetail() {
 			if (!response.ok) throw new Error("Failed to fetch reviews");
 			return response.json();
 		},
+	});
+
+	const { data: artisan } = useQuery<Artisan | null>({
+		queryKey: ["/api/artisans", product?.artisanId],
+		queryFn: async () => {
+			if (!product?.artisanId) return null;
+			const response = await fetch(`/api/artisans/${product.artisanId}`);
+			if (!response.ok) return null;
+			return response.json();
+		},
+		enabled: !!product?.artisanId,
 	});
 
 	if (isLoading) {
@@ -135,6 +147,48 @@ export default function ProductDetail() {
 								</div>
 							</div>
 						</div>
+
+						{/* Artisan Information */}
+						{artisan && (
+							<Card>
+								<CardContent className="p-6">
+									<h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+										<User className="w-5 h-5 mr-2" />
+										Meet the Artisan
+									</h3>
+									<Link to={`/artisan/${artisan.id}`}>
+										<div className="flex items-center space-x-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+											{artisan.image ? (
+												<img
+													src={artisan.image}
+													alt={artisan.name}
+													className="w-16 h-16 rounded-full object-cover"
+												/>
+											) : (
+												<div className="w-16 h-16 rounded-full bg-craft-brown flex items-center justify-center">
+													<User className="w-8 h-8 text-white" />
+												</div>
+											)}
+											<div className="flex-1">
+												<h4 className="font-medium text-gray-900">{artisan.name}</h4>
+												<p className="text-sm text-gray-600 flex items-center mt-1">
+													<MapPin className="w-3 h-3 mr-1" />
+													{artisan.location}
+												</p>
+												<p className="text-sm text-craft-brown mt-1">{artisan.specialization}</p>
+												<div 
+													className="text-sm text-gray-600 mt-2 line-clamp-2"
+													dangerouslySetInnerHTML={{ __html: artisan.bio }}
+												/>
+											</div>
+											<Button variant="outline" size="sm">
+												View Profile
+											</Button>
+										</div>
+									</Link>
+								</CardContent>
+							</Card>
+						)}
 
 						{/* Product Details */}
 						<Card>

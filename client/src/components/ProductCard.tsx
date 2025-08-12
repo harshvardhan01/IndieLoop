@@ -1,11 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, ShoppingCart } from "lucide-react";
+import { Star, MapPin, ShoppingCart, User } from "lucide-react";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useCart } from "@/hooks/useCart";
-import { Link } from "wouter";
-import type { Product } from "@shared/schema";
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import type { Product, Artisan } from "@shared/schema";
 
 interface ProductCardProps {
   product: Product;
@@ -15,6 +16,17 @@ interface ProductCardProps {
 export default function ProductCard({ product, viewMode }: ProductCardProps) {
   const { formatPrice } = useCurrency();
   const { addToCart, isAdding } = useCart();
+
+  const { data: artisan } = useQuery<Artisan | null>({
+    queryKey: ["/api/artisans", product.artisanId],
+    queryFn: async () => {
+      if (!product.artisanId) return null;
+      const response = await fetch(`/api/artisans/${product.artisanId}`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!product.artisanId,
+  });
 
   const hasDiscount = product.discountedPrice && parseFloat(product.discountedPrice) < parseFloat(product.originalPrice);
   const discountPercentage = hasDiscount
@@ -29,7 +41,7 @@ export default function ProductCard({ product, viewMode }: ProductCardProps) {
 
   if (viewMode === "list") {
     return (
-      <Link href={`/product/${product.id}`}>
+      <Link to={`/product/${product.id}`}>
         <Card className="hover:shadow-xl transition-all duration-300 cursor-pointer">
           <div className="flex">
             <div className="relative w-48 h-48 flex-shrink-0">
@@ -63,6 +75,14 @@ export default function ProductCard({ product, viewMode }: ProductCardProps) {
                     <div className="text-sm text-gray-500">
                       {product.material}
                     </div>
+                    {artisan && (
+                      <Link to={`/artisan/${artisan.id}`}>
+                        <div className="flex items-center text-sm text-craft-brown hover:underline">
+                          <User className="w-4 h-4 mr-1" />
+                          {artisan.name}
+                        </div>
+                      </Link>
+                    )}
                     <div className="flex items-center text-sm">
                       <Star className="w-4 h-4 text-yellow-400 mr-1" />
                       <span>4.8 (24)</span>
@@ -100,7 +120,7 @@ export default function ProductCard({ product, viewMode }: ProductCardProps) {
   }
 
   return (
-    <Link href={`/product/${product.id}`}>
+    <Link to={`/product/${product.id}`}>
       <Card className="hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer">
         <div className="relative">
           <img
@@ -139,7 +159,7 @@ export default function ProductCard({ product, viewMode }: ProductCardProps) {
             )}
           </div>
 
-          <div className="flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
             <div className="flex items-center">
               <MapPin className="w-3 h-3 mr-1" />
               {product.countryOfOrigin}
@@ -150,6 +170,15 @@ export default function ProductCard({ product, viewMode }: ProductCardProps) {
               <span>4.8 (24)</span>
             </div>
           </div>
+
+          {artisan && (
+            <Link to={`/artisan/${artisan.id}`}>
+              <div className="flex items-center text-xs text-craft-brown hover:underline mb-2">
+                <User className="w-3 h-3 mr-1" />
+                By {artisan.name}
+              </div>
+            </Link>
+          )}
 
           <Button
             onClick={handleAddToCart}

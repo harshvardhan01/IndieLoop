@@ -62,6 +62,7 @@ export default function AdminProducts() {
 		category: "",
 		material: "",
 		countryOfOrigin: "",
+		artisanId: "",
 		images: [""],
 		dimensions: {
 			length: "",
@@ -105,6 +106,19 @@ export default function AdminProducts() {
 		queryFn: async () => {
 			const response = await fetch("/api/config/materials");
 			if (!response.ok) throw new Error("Failed to fetch materials");
+			return response.json();
+		},
+	});
+
+	const { data: artisans = [] } = useQuery({
+		queryKey: ["admin", "artisans"],
+		queryFn: async () => {
+			const response = await fetch("/api/artisans", {
+				headers: {
+					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
+				},
+			});
+			if (!response.ok) throw new Error("Failed to fetch artisans");
 			return response.json();
 		},
 	});

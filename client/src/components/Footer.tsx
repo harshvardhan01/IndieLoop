@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 export default function Footer() {
 	return (
@@ -22,21 +22,21 @@ export default function Footer() {
 						<ul className="space-y-2 text-craft-tan">
 							<li>
 								<Link
-									href="/"
+									to="/"
 									className="hover:text-white transition-colors">
 									Home
 								</Link>
 							</li>
 							<li>
 								<Link
-									href="/collections"
+									to="/collections"
 									className="hover:text-white transition-colors">
 									Collections
 								</Link>
 							</li>
 							<li>
 								<Link
-									href="/about"
+									to="/about"
 									className="hover:text-white transition-colors">
 									About Us
 								</Link>
@@ -50,28 +50,28 @@ export default function Footer() {
 						<ul className="space-y-2 text-craft-tan">
 							<li>
 								<Link
-									href="/orders"
+									to="/orders"
 									className="hover:text-white transition-colors">
 									Track Your Order
 								</Link>
 							</li>
 							<li>
 								<Link
-									href="/terms"
+									to="/terms"
 									className="hover:text-white transition-colors">
 									Terms & Conditions
 								</Link>
 							</li>
 							<li>
 								<Link
-									href="/privacy"
+									to="/privacy"
 									className="hover:text-white transition-colors">
 									Privacy Policy
 								</Link>
 							</li>
 							<li>
 								<Link
-									href="/contact"
+									to="/contact"
 									className="hover:text-white transition-colors">
 									Contact
 								</Link>

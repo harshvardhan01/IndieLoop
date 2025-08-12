@@ -1,4 +1,5 @@
-import { Switch, Route } from "wouter";
+
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -20,13 +21,14 @@ import Admin from "@/pages/Admin";
 import AdminProducts from "@/pages/admin/AdminProducts";
 import AdminOrders from "@/pages/admin/AdminOrders";
 import AdminSupport from "@/pages/admin/AdminSupport";
+import AdminArtisans from "@/pages/admin/AdminArtisans";
+import ArtisanDetail from "@/pages/ArtisanDetail";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Addresses from "@/pages/Addresses";
 import ErrorBanner from "@/components/ErrorBanner";
 import { ErrorContext, useErrorProvider } from "@/hooks/useError";
 import Checkout from "@/pages/Checkout";
-
 
 function Router() {
 	const { isAuthenticated, isLoading } = useAuth();
@@ -40,32 +42,36 @@ function Router() {
 	}
 
 	return (
-		<div className="min-h-screen bg-background flex flex-col">
-			<Header />
-			<main className="flex-1">
-				<Switch>
-					<Route path="/" component={Home} />
-					<Route path="/login" component={Login} />
-					<Route path="/register" component={Register} />
-					<Route path="/collections" component={Collections} />
-					<Route path="/product/:id" component={ProductDetail} />
-					<Route path="/cart" component={Cart} />
-					<Route path="/checkout" component={Checkout} />
-					<Route path="/orders" component={Orders} />
-					<Route path="/addresses" component={Addresses} />
-					<Route path="/about" component={About} />
-					<Route path="/contact" component={Contact} />
-					<Route path="/terms" component={Terms} />
-					<Route path="/privacy" component={Privacy} />
-					<Route path="/admin" component={Admin} />
-					<Route path="/admin/products" component={AdminProducts} />
-					<Route path="/admin/orders" component={AdminOrders} />
-					<Route path="/admin/support" component={AdminSupport} />
-					<Route component={NotFound} />
-				</Switch>
-			</main>
-			<Footer />
-		</div>
+		<BrowserRouter>
+			<div className="min-h-screen bg-background flex flex-col">
+				<Header />
+				<main className="flex-1">
+					<Routes>
+						<Route path="/" element={<Home />} />
+						<Route path="/login" element={<Login />} />
+						<Route path="/register" element={<Register />} />
+						<Route path="/collections" element={<Collections />} />
+						<Route path="/product/:id" element={<ProductDetail />} />
+						<Route path="/artisan/:id" element={<ArtisanDetail />} />
+						<Route path="/cart" element={<Cart />} />
+						<Route path="/checkout" element={<Checkout />} />
+						<Route path="/orders" element={<Orders />} />
+						<Route path="/addresses" element={<Addresses />} />
+						<Route path="/about" element={<About />} />
+						<Route path="/contact" element={<Contact />} />
+						<Route path="/terms" element={<Terms />} />
+						<Route path="/privacy" element={<Privacy />} />
+						<Route path="/admin" element={<Admin />} />
+						<Route path="/admin/products" element={<AdminProducts />} />
+						<Route path="/admin/orders" element={<AdminOrders />} />
+						<Route path="/admin/support" element={<AdminSupport />} />
+						<Route path="/admin/artisans" element={<AdminArtisans />} />
+						<Route path="*" element={<NotFound />} />
+					</Routes>
+				</main>
+				<Footer />
+			</div>
+		</BrowserRouter>
 	);
 }
 
@@ -81,8 +87,7 @@ function App() {
 							error={errorContext.error}
 							onDismiss={errorContext.clearError}
 						/>
-						<Router>
-						</Router>
+						<Router />
 						<Toaster />
 					</div>
 				</ErrorContext.Provider>
