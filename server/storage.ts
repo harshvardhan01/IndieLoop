@@ -477,9 +477,31 @@ export class MemStorage implements IStorage {
 
 	// Review operations
 	async getProductReviews(productId: string): Promise<Review[]> {
-		return Array.from(this.reviews.values()).filter(
+		const reviews = Array.from(this.reviews.values()).filter(
 			(review) => review.productId === productId
 		);
+
+		// Enhance reviews with user information
+		const reviewsWithUsers = await Promise.all(
+			reviews.map(async (review) => {
+				try {
+					const user = await this.getUser(review.userId);
+					return {
+						...review,
+						userName: user
+							? `${user.firstName} ${user.lastName}`
+							: "Anonymous User",
+					};
+				} catch {
+					return {
+						...review,
+						userName: "Anonymous User",
+					};
+				}
+			})
+		);
+
+		return reviewsWithUsers;
 	}
 
 	async createReview(insertReview: InsertReview): Promise<Review> {

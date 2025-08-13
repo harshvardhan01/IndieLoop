@@ -1,22 +1,27 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
-import { Artisan } from "@shared/schema";
+import {
+	Plus,
+	Search,
+	Edit,
+	Trash2,
+	User,
+	MapPin,
+	Grid,
+	List,
+	Filter,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
 	Card,
 	CardContent,
-	CardDescription,
 	CardHeader,
 	CardTitle,
+	CardDescription,
 } from "@/components/ui/card";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
 	Modal,
 	ModalContent,
@@ -24,132 +29,161 @@ import {
 	ModalTitle,
 	ModalTrigger,
 } from "@/components/ui/modal";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart, Filter, Search } from "lucide-react";
-import { Plus, Edit, Trash2, User, MapPin } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import type { Artisan } from "@shared/schema";
+
+interface ArtisanFormData {
+	name: string;
+	location: string;
+	specialization: string;
+	experience: string;
+	bio: string;
+	story: string;
+	image: string;
+}
 
 export default function AdminArtisans() {
-	const { user } = useAuth();
-	const { toast } = useToast();
-	const queryClient = useQueryClient();
-	const [statusFilter, setStatusFilter] = useState<string>("all");
-	const [isArtisanDialogOpen, setIsArtisanDialogOpen] = useState(false);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [statusFilter, setStatusFilter] = useState("all");
+	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editingArtisan, setEditingArtisan] = useState<Artisan | null>(null);
-	const [searchQuery, setSearchQuery] = useState<string>("");
-
-	const [artisanForm, setArtisanForm] = useState({
+	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+	const [artisanForm, setArtisanForm] = useState<ArtisanFormData>({
 		name: "",
-		bio: "",
 		location: "",
 		specialization: "",
 		experience: "",
+		bio: "",
 		story: "",
 		image: "",
 	});
 
-	// Fetch artisans
-	const { data: artisans = [] } = useQuery<Artisan[]>({
+	const { toast } = useToast();
+	const { user } = useAuth();
+	const queryClient = useQueryClient();
+
+	// Check if user is admin
+	if (!user || !user.isAdmin) {
+		return (
+			<div className="flex items-center justify-center min-h-screen">
+				<div className="text-center">
+					<h2 className="text-2xl font-bold text-gray-900 mb-2">
+						Access Denied
+					</h2>
+					<p className="text-gray-600">
+						You need admin privileges to access this page.
+					</p>
+				</div>
+			</div>
+		);
+	}
+
+	const { data: artisans = [], isLoading } = useQuery({
 		queryKey: ["admin", "artisans"],
 		queryFn: async () => {
-			const response = await fetch("/api/artisans", {
-				headers: {
-					Authorization: `Bearer ${localStorage.getItem(
-						"sessionId"
-					)}`,
-				},
-			});
+			const response = await fetch("/api/artisans");
 			if (!response.ok) throw new Error("Failed to fetch artisans");
 			return response.json();
 		},
 	});
 
-	// Create artisan mutation
 	const createArtisanMutation = useMutation({
-		mutationFn: async (artisanData: typeof artisanForm) => {
+		mutationFn: async (artisanData: ArtisanFormData) => {
+			const sessionId = localStorage.getItem("sessionId");
 			const response = await fetch("/api/artisans", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${localStorage.getItem(
-						"sessionId"
-					)}`,
+					Authorization: `Bearer ${sessionId}`,
 				},
 				body: JSON.stringify(artisanData),
 			});
-			if (!response.ok) throw new Error("Failed to create artisan");
+			if (!response.ok) {
+				const error = await response.json();
+				throw new Error(error.message || "Failed to create artisan");
+			}
 			return response.json();
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["admin", "artisans"] });
-			setIsArtisanDialogOpen(false);
+			setIsDialogOpen(false);
 			resetForm();
 			toast({
 				title: "Success",
 				description: "Artisan created successfully",
 			});
 		},
-		onError: () => {
+		onError: (error: Error) => {
 			toast({
 				title: "Error",
-				description: "Failed to create artisan",
+				description: error.message,
 				variant: "destructive",
 			});
 		},
 	});
 
-	// Update artisan mutation
 	const updateArtisanMutation = useMutation({
 		mutationFn: async ({
 			id,
 			...artisanData
-		}: { id: string } & typeof artisanForm) => {
+		}: ArtisanFormData & { id: string }) => {
+			const sessionId = localStorage.getItem("sessionId");
 			const response = await fetch(`/api/artisans/${id}`, {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${localStorage.getItem(
-						"sessionId"
-					)}`,
+					Authorization: `Bearer ${sessionId}`,
 				},
 				body: JSON.stringify(artisanData),
 			});
-			if (!response.ok) throw new Error("Failed to update artisan");
+			if (!response.ok) {
+				const error = await response.json();
+				throw new Error(error.message || "Failed to update artisan");
+			}
 			return response.json();
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["admin", "artisans"] });
-			setIsArtisanDialogOpen(false);
-			setEditingArtisan(null);
+			setIsDialogOpen(false);
 			resetForm();
+			setEditingArtisan(null);
 			toast({
 				title: "Success",
 				description: "Artisan updated successfully",
 			});
 		},
-		onError: () => {
+		onError: (error: Error) => {
 			toast({
 				title: "Error",
-				description: "Failed to update artisan",
+				description: error.message,
 				variant: "destructive",
 			});
 		},
 	});
 
-	// Delete artisan mutation
 	const deleteArtisanMutation = useMutation({
 		mutationFn: async (id: string) => {
+			const sessionId = localStorage.getItem("sessionId");
 			const response = await fetch(`/api/artisans/${id}`, {
 				method: "DELETE",
 				headers: {
-					Authorization: `Bearer ${localStorage.getItem(
-						"sessionId"
-					)}`,
+					Authorization: `Bearer ${sessionId}`,
 				},
 			});
-			if (!response.ok) throw new Error("Failed to delete artisan");
+			if (!response.ok) {
+				const error = await response.json();
+				throw new Error(error.message || "Failed to delete artisan");
+			}
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["admin", "artisans"] });
@@ -158,10 +192,10 @@ export default function AdminArtisans() {
 				description: "Artisan deleted successfully",
 			});
 		},
-		onError: () => {
+		onError: (error: Error) => {
 			toast({
 				title: "Error",
-				description: "Failed to delete artisan",
+				description: error.message,
 				variant: "destructive",
 			});
 		},
@@ -170,30 +204,66 @@ export default function AdminArtisans() {
 	const resetForm = () => {
 		setArtisanForm({
 			name: "",
-			bio: "",
 			location: "",
 			specialization: "",
 			experience: "",
+			bio: "",
 			story: "",
 			image: "",
 		});
 	};
 
-	const openEditArtisan = (artisan: Artisan) => {
+	const handleEdit = (artisan: Artisan) => {
 		setEditingArtisan(artisan);
 		setArtisanForm({
 			name: artisan.name,
-			bio: artisan.bio,
 			location: artisan.location,
 			specialization: artisan.specialization,
 			experience: artisan.experience,
+			bio: artisan.bio,
 			story: artisan.story,
 			image: artisan.image || "",
 		});
-		setIsArtisanDialogOpen(true);
+		setIsDialogOpen(true);
 	};
 
-	const handleSubmit = () => {
+	const handleAdd = () => {
+		setEditingArtisan(null);
+		resetForm();
+		setIsDialogOpen(true);
+	};
+
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+
+		// Basic validation with proper null checks
+		if (!artisanForm.name || !artisanForm.name.trim()) {
+			toast({
+				title: "Error",
+				description: "Name is required",
+				variant: "destructive",
+			});
+			return;
+		}
+
+		if (!artisanForm.location || !artisanForm.location.trim()) {
+			toast({
+				title: "Error",
+				description: "Location is required",
+				variant: "destructive",
+			});
+			return;
+		}
+
+		if (!artisanForm.specialization || !artisanForm.specialization.trim()) {
+			toast({
+				title: "Error",
+				description: "Specialization is required",
+				variant: "destructive",
+			});
+			return;
+		}
+
 		if (editingArtisan) {
 			updateArtisanMutation.mutate({
 				id: editingArtisan.id,
@@ -204,152 +274,161 @@ export default function AdminArtisans() {
 		}
 	};
 
+	// Filter artisans
+	const filteredArtisans = useMemo(() => {
+		return artisans.filter((artisan: Artisan) => {
+			// Search filter
+			const matchesSearch =
+				searchQuery === "" ||
+				artisan.name
+					?.toLowerCase()
+					.includes(searchQuery.toLowerCase()) ||
+				artisan.location
+					?.toLowerCase()
+					.includes(searchQuery.toLowerCase()) ||
+				artisan.specialization
+					?.toLowerCase()
+					.includes(searchQuery.toLowerCase());
+
+			// Status filter (assuming artisans have a status field, or we can infer from other data)
+			const matchesStatus = statusFilter === "all";
+
+			return matchesSearch && matchesStatus;
+		});
+	}, [artisans, searchQuery, statusFilter]);
+
+	if (isLoading) {
+		return (
+			<div className="min-h-screen flex items-center justify-center">
+				<div className="animate-spin rounded-full h-32 w-32 border-b-2 border-craft-brown"></div>
+			</div>
+		);
+	}
+
 	return (
-		<div className="space-y-6">
-			<div className="container mx-auto p-6">
-				<div className="flex items-center gap-2 mb-8">
+		<div className="container mx-auto p-6">
+			<div className="flex items-center justify-between mb-8">
+				<div className="flex items-center gap-2">
+					<User className="h-6 w-6" />
 					<h1 className="text-3xl font-bold">Artisan Management</h1>
 				</div>
-				{/* Filters */}
-				<div className="flex flex-col sm:flex-row gap-4 mb-6">
-					<div className="flex items-center gap-2 flex-1">
-						<Search className="h-4 w-4 text-gray-500" />
-						<Input
-							placeholder="Search by name, or address..."
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							className="flex-1"
-						/>
-					</div>
-					<div className="flex items-center gap-2">
-						<Filter className="h-4 w-4 text-gray-500" />
-						<Select
-							value={statusFilter}
-							onValueChange={setStatusFilter}>
-							<SelectTrigger className="w-[180px]">
-								<SelectValue placeholder="Filter by status" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">
-									All Artisans
-								</SelectItem>
-								<SelectItem value="active">Active</SelectItem>
-								<SelectItem value="inactive">
-									Inactive
-								</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
-				</div>
-
-				<Modal
-					open={isArtisanDialogOpen}
-					onOpenChange={setIsArtisanDialogOpen}>
-					<ModalTrigger asChild>
+				<div className="flex items-center gap-4">
+					<div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
 						<Button
-							onClick={() => {
-								setEditingArtisan(null);
-								resetForm();
-							}}
-							className="bg-craft-brown hover:bg-craft-brown/90">
-							<Plus className="w-4 h-4 mr-2" />
-							Add Artisan
+							size="sm"
+							variant={viewMode === "grid" ? "default" : "ghost"}
+							onClick={() => setViewMode("grid")}>
+							<Grid className="h-4 w-4" />
 						</Button>
-					</ModalTrigger>
-					<ModalContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-						<ModalHeader>
-							<ModalTitle>
-								{editingArtisan
-									? "Edit Artisan"
-									: "Add New Artisan"}
-							</ModalTitle>
-						</ModalHeader>
-						<div className="grid gap-4 py-4">
-							<div className="grid grid-cols-2 gap-4">
-								<div className="space-y-2">
-									<Label htmlFor="name">Name</Label>
-									<Input
-										id="name"
-										value={artisanForm.name}
-										onChange={(e) =>
-											setArtisanForm({
-												...artisanForm,
-												name: e.target.value,
-											})
-										}
-									/>
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="location">Location</Label>
-									<Input
-										id="location"
-										value={artisanForm.location}
-										onChange={(e) =>
-											setArtisanForm({
-												...artisanForm,
-												location: e.target.value,
-											})
-										}
-									/>
-								</div>
-							</div>
-							<div className="grid grid-cols-2 gap-4">
-								<div className="space-y-2">
-									<Label htmlFor="specialization">
-										Specialization
-									</Label>
-									<Input
-										id="specialization"
-										value={artisanForm.specialization}
-										onChange={(e) =>
-											setArtisanForm({
-												...artisanForm,
-												specialization: e.target.value,
-											})
-										}
-									/>
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="experience">
-										Experience
-									</Label>
-									<Input
-										id="experience"
-										value={artisanForm.experience}
-										onChange={(e) =>
-											setArtisanForm({
-												...artisanForm,
-												experience: e.target.value,
-											})
-										}
-									/>
-								</div>
-							</div>
-							<div className="space-y-2">
-								<Label htmlFor="image">Image URL</Label>
-								<Input
-									id="image"
-									value={artisanForm.image}
-									onChange={(e) =>
-										setArtisanForm({
-											...artisanForm,
-											image: e.target.value,
-										})
-									}
-								/>
-							</div>
-							<div className="space-y-2">
-								<Label htmlFor="bio">Bio</Label>
-								<div className="space-y-2">
-									<div className="flex gap-2 text-xs text-gray-600">
-										<span>
-											Supports HTML:
-											&lt;b&gt;bold&lt;/b&gt;,
-											&lt;i&gt;italic&lt;/i&gt;,
-											&lt;br&gt;,
-											&lt;p&gt;paragraphs&lt;/p&gt;
-										</span>
+						<Button
+							size="sm"
+							variant={viewMode === "list" ? "default" : "ghost"}
+							onClick={() => setViewMode("list")}>
+							<List className="h-4 w-4" />
+						</Button>
+					</div>
+					<Modal open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+						<ModalTrigger asChild>
+							<Button onClick={handleAdd}>
+								<Plus className="h-4 w-4 mr-2" />
+								Add Artisan
+							</Button>
+						</ModalTrigger>
+						<ModalContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+							<ModalHeader>
+								<ModalTitle>
+									{editingArtisan
+										? "Edit Artisan"
+										: "Add New Artisan"}
+								</ModalTitle>
+							</ModalHeader>
+							<form onSubmit={handleSubmit} className="space-y-4">
+								<div className="grid grid-cols-2 gap-4">
+									<div className="space-y-2">
+										<Label htmlFor="name">Name *</Label>
+										<Input
+											id="name"
+											value={artisanForm.name}
+											onChange={(e) =>
+												setArtisanForm({
+													...artisanForm,
+													name: e.target.value,
+												})
+											}
+											placeholder="Artisan name"
+											required
+										/>
 									</div>
+									<div className="space-y-2">
+										<Label htmlFor="location">
+											Location *
+										</Label>
+										<Input
+											id="location"
+											value={artisanForm.location}
+											onChange={(e) =>
+												setArtisanForm({
+													...artisanForm,
+													location: e.target.value,
+												})
+											}
+											placeholder="City, Country"
+											required
+										/>
+									</div>
+								</div>
+								<div className="grid grid-cols-2 gap-4">
+									<div className="space-y-2">
+										<Label htmlFor="specialization">
+											Specialization *
+										</Label>
+										<Input
+											id="specialization"
+											value={artisanForm.specialization}
+											onChange={(e) =>
+												setArtisanForm({
+													...artisanForm,
+													specialization:
+														e.target.value,
+												})
+											}
+											placeholder="e.g., Pottery, Weaving"
+											required
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="experience">
+											Experience
+										</Label>
+										<Input
+											id="experience"
+											value={artisanForm.experience}
+											onChange={(e) =>
+												setArtisanForm({
+													...artisanForm,
+													experience: e.target.value,
+												})
+											}
+											placeholder="e.g., 15 years"
+										/>
+									</div>
+								</div>
+								<div className="space-y-2">
+									<Label htmlFor="image">Image URL</Label>
+									<Input
+										id="image"
+										value={artisanForm.image}
+										onChange={(e) =>
+											setArtisanForm({
+												...artisanForm,
+												image: e.target.value,
+											})
+										}
+										placeholder="https://example.com/image.jpg"
+									/>
+								</div>
+								<div className="space-y-2">
+									<Label htmlFor="bio">Bio</Label>
 									<Textarea
 										id="bio"
 										value={artisanForm.bio}
@@ -359,24 +438,12 @@ export default function AdminArtisans() {
 												bio: e.target.value,
 											})
 										}
-										rows={4}
-										placeholder="Enter bio with HTML formatting..."
+										placeholder="Short biography"
+										className="min-h-20"
 									/>
 								</div>
-							</div>
-							<div className="space-y-2">
-								<Label htmlFor="story">Story</Label>
 								<div className="space-y-2">
-									<div className="flex gap-2 text-xs text-gray-600">
-										<span>
-											Supports HTML:
-											&lt;b&gt;bold&lt;/b&gt;,
-											&lt;i&gt;italic&lt;/i&gt;,
-											&lt;br&gt;,
-											&lt;p&gt;paragraphs&lt;/p&gt;,
-											&lt;ul&gt;&lt;li&gt;lists&lt;/li&gt;&lt;/ul&gt;
-										</span>
-									</div>
+									<Label htmlFor="story">Story</Label>
 									<Textarea
 										id="story"
 										value={artisanForm.story}
@@ -386,88 +453,220 @@ export default function AdminArtisans() {
 												story: e.target.value,
 											})
 										}
-										rows={6}
-										placeholder="Enter artisan story with HTML formatting..."
+										placeholder="Artisan's detailed story"
+										className="min-h-32"
 									/>
 								</div>
-							</div>
-						</div>
-						<div className="flex justify-end space-x-2">
-							<Button
-								variant="outline"
-								onClick={() => setIsArtisanDialogOpen(false)}>
-								Cancel
-							</Button>
-							<Button onClick={handleSubmit}>
-								{editingArtisan ? "Update" : "Create"} Artisan
-							</Button>
-						</div>
-					</ModalContent>
-				</Modal>
+								<div className="flex space-x-2">
+									<Button
+										type="submit"
+										className="flex-1"
+										disabled={
+											createArtisanMutation.isPending ||
+											updateArtisanMutation.isPending
+										}>
+										{editingArtisan
+											? "Update Artisan"
+											: "Create Artisan"}
+									</Button>
+									<Button
+										type="button"
+										variant="outline"
+										onClick={() => {
+											setIsDialogOpen(false);
+											resetForm();
+											setEditingArtisan(null);
+										}}>
+										Cancel
+									</Button>
+								</div>
+							</form>
+						</ModalContent>
+					</Modal>
+				</div>
 			</div>
 
-			<div className="grid gap-6">
-				{artisans.map((artisan) => (
-					<Card key={artisan.id}>
-						<CardHeader>
-							<div className="flex items-center space-x-3">
-								{artisan.image ? (
-									<img
-										src={artisan.image}
-										alt={artisan.name}
-										className="w-12 h-12 rounded-full object-cover"
-									/>
-								) : (
-									<div className="w-12 h-12 rounded-full bg-craft-brown flex items-center justify-center">
-										<User className="w-6 h-6 text-white" />
-									</div>
-								)}
-								<div>
-									<CardTitle className="text-lg">
-										{artisan.name}
-									</CardTitle>
-									<CardDescription className="flex items-center">
-										<MapPin className="w-3 h-3 mr-1" />
-										{artisan.location}
-									</CardDescription>
-								</div>
-							</div>
-						</CardHeader>
-						<CardContent>
-							<div className="space-y-2 mb-4">
-								<p className="text-sm text-gray-600">
-									<strong>Specialization:</strong>{" "}
-									{artisan.specialization}
-								</p>
-								<p className="text-sm text-gray-600">
-									<strong>Experience:</strong>{" "}
-									{artisan.experience}
-								</p>
-								<p className="text-sm text-gray-600 line-clamp-2">
-									{artisan.bio}
-								</p>
-							</div>
-							<div className="flex space-x-2">
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() => openEditArtisan(artisan)}>
-									<Edit className="w-3 h-3 mr-1" />
-									Edit
-								</Button>
-								<Button
-									variant="destructive"
-									size="sm"
-									onClick={() =>
-										deleteArtisanMutation.mutate(artisan.id)
-									}>
-									<Trash2 className="w-3 h-3 mr-1" />
-									Delete
-								</Button>
-							</div>
+			{/* Filters */}
+			<div className="flex flex-col lg:flex-row gap-4 mb-6">
+				<div className="flex items-center gap-2 flex-1">
+					<Search className="h-4 w-4 text-gray-500" />
+					<Input
+						placeholder="Search by name, location, or specialization..."
+						value={searchQuery}
+						onChange={(e) => setSearchQuery(e.target.value)}
+						className="flex-1"
+					/>
+				</div>
+			</div>
+
+			<div
+				className={
+					viewMode === "grid"
+						? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+						: "grid gap-4"
+				}>
+				{filteredArtisans.length === 0 ? (
+					<Card>
+						<CardContent className="p-6">
+							<p className="text-center text-gray-500">
+								No artisans found
+							</p>
 						</CardContent>
 					</Card>
-				))}
+				) : (
+					filteredArtisans.map((artisan: Artisan) => (
+						<Card
+							key={artisan.id}
+							className={viewMode === "list" ? "w-full" : ""}>
+							{viewMode === "grid" ? (
+								<>
+									<CardHeader>
+										<div className="aspect-square w-full mb-4 bg-gray-100 rounded-lg overflow-hidden">
+											{artisan.image ? (
+												<img
+													src={artisan.image}
+													alt={artisan.name}
+													className="w-full h-full object-cover"
+												/>
+											) : (
+												<div className="w-full h-full flex items-center justify-center">
+													<User className="w-16 h-16 text-gray-400" />
+												</div>
+											)}
+										</div>
+										<div>
+											<Link to={`/artisan/${artisan.id}`}>
+												<CardTitle className="text-sm hover:text-craft-brown cursor-pointer transition-colors">
+													{artisan.name}
+												</CardTitle>
+											</Link>
+											<p className="text-sm text-gray-600 mt-1 flex items-center">
+												<MapPin className="w-3 h-3 mr-1" />
+												{artisan.location}
+											</p>
+											<Badge className="mt-2 bg-craft-brown text-white text-xs">
+												{artisan.specialization}
+											</Badge>
+										</div>
+									</CardHeader>
+									<CardContent className="pt-0">
+										<div className="flex space-x-1 mb-2">
+											<Button
+												size="sm"
+												variant="outline"
+												onClick={() =>
+													handleEdit(artisan)
+												}>
+												<Edit className="h-3 w-3" />
+											</Button>
+											<Button
+												size="sm"
+												variant="destructive"
+												onClick={() => {
+													if (
+														confirm(
+															"Are you sure you want to delete this artisan?"
+														)
+													) {
+														deleteArtisanMutation.mutate(
+															artisan.id
+														);
+													}
+												}}>
+												<Trash2 className="h-3 w-3" />
+											</Button>
+										</div>
+										<p className="text-xs text-gray-600">
+											{artisan.experience &&
+												`${artisan.experience} experience`}
+										</p>
+									</CardContent>
+								</>
+							) : (
+								<>
+									<CardHeader>
+										<div className="flex justify-between items-start">
+											<div className="flex items-center space-x-3">
+												{artisan.image ? (
+													<img
+														src={artisan.image}
+														alt={artisan.name}
+														className="w-16 h-16 rounded-full object-cover"
+													/>
+												) : (
+													<div className="w-16 h-16 rounded-full bg-craft-brown flex items-center justify-center">
+														<User className="w-8 h-8 text-white" />
+													</div>
+												)}
+												<div>
+													<Link
+														to={`/artisan/${artisan.id}`}>
+														<CardTitle className="hover:text-craft-brown cursor-pointer transition-colors">
+															{artisan.name}
+														</CardTitle>
+													</Link>
+													<CardDescription className="flex items-center mt-1">
+														<MapPin className="w-4 h-4 mr-1" />
+														{artisan.location}
+													</CardDescription>
+												</div>
+											</div>
+											<div className="text-right">
+												<Badge className="bg-craft-brown text-white">
+													{artisan.specialization}
+												</Badge>
+												{artisan.experience && (
+													<p className="text-sm text-gray-600 mt-1">
+														{artisan.experience}
+													</p>
+												)}
+											</div>
+										</div>
+									</CardHeader>
+									<CardContent>
+										<div className="grid grid-cols-1 gap-4 mb-4">
+											<div>
+												<p className="text-sm text-gray-500">
+													Bio
+												</p>
+												<div
+													className="text-sm text-gray-700 line-clamp-2"
+													dangerouslySetInnerHTML={{
+														__html: artisan.bio,
+													}}
+												/>
+											</div>
+										</div>
+										<div className="flex space-x-2">
+											<Button
+												variant="outline"
+												onClick={() =>
+													handleEdit(artisan)
+												}>
+												<Edit className="h-4 w-4" />
+											</Button>
+											<Button
+												variant="destructive"
+												onClick={() => {
+													if (
+														confirm(
+															"Are you sure you want to delete this artisan?"
+														)
+													) {
+														deleteArtisanMutation.mutate(
+															artisan.id
+														);
+													}
+												}}>
+												<Trash2 className="h-4 w-4" />
+											</Button>
+										</div>
+									</CardContent>
+								</>
+							)}
+						</Card>
+					))
+				)}
 			</div>
 		</div>
 	);

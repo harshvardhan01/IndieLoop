@@ -194,11 +194,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 			const featuredProducts = await storage.getFeaturedProducts();
 			res.json(featuredProducts);
 		} catch (error) {
-			res.status(500).json({ message: "Failed to fetch featured products" });
+			res.status(500).json({
+				message: "Failed to fetch featured products",
+			});
 		}
 	});
-
-
 
 	app.get("/api/products/:id", async (req, res) => {
 		try {
@@ -229,6 +229,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
 		}
 	});
 
+	app.post(
+		"/api/products/:id/reviews",
+		requireAuth,
+		async (req: any, res) => {
+			try {
+				const { rating, comment } = req.body;
+
+				if (!rating || rating < 1 || rating > 5) {
+					return res
+						.status(400)
+						.json({ message: "Rating must be between 1 and 5" });
+				}
+
+				const reviewData = insertReviewSchema.parse({
+					productId: req.params.id,
+					userId: req.user.userId,
+					rating: parseInt(rating),
+					comment: comment?.trim() || null,
+				});
+
+				// Check if user already reviewed this product
+				const existingReviews = await storage.getProductReviews(
+					req.params.id
+				);
+				const userHasReviewed = existingReviews.some(
+					(review) => review.userId === req.user.userId
+				);
+
+				if (userHasReviewed) {
+					return res
+						.status(400)
+						.json({
+							message: "You have already reviewed this product",
+						});
+				}
+
+				const review = await storage.createReview(reviewData);
+				res.status(201).json(review);
+			} catch (error) {
+				if (error instanceof z.ZodError) {
+					return res
+						.status(400)
+						.json({ message: error.errors[0].message });
+				}
+				res.status(500).json({ message: "Failed to create review" });
+			}
+		}
+	);
+
 	// Cart routes
 	app.get("/api/cart", requireAuth, async (req: any, res) => {
 		try {
@@ -237,7 +286,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 				cartItems.map(async (item) => {
 					const product = await storage.getProduct(item.productId);
 					if (product && product.artisanId) {
-						const artisan = await storage.getArtisanById(product.artisanId);
+						const artisan = await storage.getArtisanById(
+							product.artisanId
+						);
 						product.artisan = artisan;
 					}
 					return { ...item, product };
@@ -349,10 +400,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 			// Verify the order belongs to the user (unless admin)
 			const userOrder = await storage.getUserOrders(req.user.userId);
-			const orderExists = userOrder.find(o => o.id === req.params.id);
+			const orderExists = userOrder.find((o) => o.id === req.params.id);
 
 			if (!orderExists && !req.user.isAdmin) {
-				return res.status(403).json({ message: "Not authorized to cancel this order" });
+				return res
+					.status(403)
+					.json({ message: "Not authorized to cancel this order" });
 			}
 
 			res.json(order);
@@ -398,7 +451,9 @@ ${messageData.message}
 	// Address routes
 	app.get("/api/addresses", requireAuth, async (req: any, res) => {
 		try {
-			const addresses = await storage.getAddressesByUserId(req.user.userId);
+			const addresses = await storage.getAddressesByUserId(
+				req.user.userId
+			);
 			res.json(addresses);
 		} catch (error) {
 			console.error("Error fetching addresses:", error);
@@ -432,15 +487,21 @@ ${messageData.message}
 
 	app.get("/api/artisans/:id/products", async (req, res) => {
 		try {
-			const products = await storage.getProductsByArtisanId(req.params.id);
+			const products = await storage.getProductsByArtisanId(
+				req.params.id
+			);
 			// Enhance products with artisan details
-			const enhancedProducts = await Promise.all(products.map(async (product) => {
-				if (product.artisanId) {
-					const artisan = await storage.getArtisanById(product.artisanId);
-					product.artisan = artisan;
-				}
-				return product;
-			}));
+			const enhancedProducts = await Promise.all(
+				products.map(async (product) => {
+					if (product.artisanId) {
+						const artisan = await storage.getArtisanById(
+							product.artisanId
+						);
+						product.artisan = artisan;
+					}
+					return product;
+				})
+			);
 			res.json(enhancedProducts);
 		} catch (error) {
 			console.error("Error fetching artisan products:", error);
@@ -451,7 +512,9 @@ ${messageData.message}
 	app.post("/api/artisans", requireAuth, async (req, res) => {
 		try {
 			if (!req.user.isAdmin) {
-				return res.status(403).json({ message: "Admin access required" });
+				return res
+					.status(403)
+					.json({ message: "Admin access required" });
 			}
 
 			const artisanData = insertArtisanSchema.parse(req.body);
@@ -460,7 +523,9 @@ ${messageData.message}
 		} catch (error) {
 			console.error("Error creating artisan:", error);
 			if (error instanceof z.ZodError) {
-				return res.status(400).json({ message: error.errors[0].message });
+				return res
+					.status(400)
+					.json({ message: error.errors[0].message });
 			}
 			res.status(500).json({ message: "Internal server error" });
 		}
@@ -469,11 +534,16 @@ ${messageData.message}
 	app.put("/api/artisans/:id", requireAuth, async (req, res) => {
 		try {
 			if (!req.user.isAdmin) {
-				return res.status(403).json({ message: "Admin access required" });
+				return res
+					.status(403)
+					.json({ message: "Admin access required" });
 			}
 
 			const artisanData = insertArtisanSchema.parse(req.body);
-			const artisan = await storage.updateArtisan(req.params.id, artisanData);
+			const artisan = await storage.updateArtisan(
+				req.params.id,
+				artisanData
+			);
 			if (!artisan) {
 				return res.status(404).json({ message: "Artisan not found" });
 			}
@@ -481,7 +551,9 @@ ${messageData.message}
 		} catch (error) {
 			console.error("Error updating artisan:", error);
 			if (error instanceof z.ZodError) {
-				return res.status(400).json({ message: error.errors[0].message });
+				return res
+					.status(400)
+					.json({ message: error.errors[0].message });
 			}
 			res.status(500).json({ message: "Internal server error" });
 		}
@@ -490,7 +562,9 @@ ${messageData.message}
 	app.delete("/api/artisans/:id", requireAuth, async (req, res) => {
 		try {
 			if (!req.user.isAdmin) {
-				return res.status(403).json({ message: "Admin access required" });
+				return res
+					.status(403)
+					.json({ message: "Admin access required" });
 			}
 
 			const success = await storage.deleteArtisan(req.params.id);
@@ -503,7 +577,6 @@ ${messageData.message}
 			res.status(500).json({ message: "Internal server error" });
 		}
 	});
-
 
 	app.post("/api/addresses", requireAuth, async (req: any, res) => {
 		try {
@@ -526,7 +599,10 @@ ${messageData.message}
 	app.put("/api/addresses/:id", requireAuth, async (req: any, res) => {
 		try {
 			const addressData = insertAddressSchema.parse(req.body);
-			const address = await storage.updateAddress(req.params.id, addressData);
+			const address = await storage.updateAddress(
+				req.params.id,
+				addressData
+			);
 			if (!address) {
 				return res.status(404).json({ message: "Address not found" });
 			}
@@ -671,11 +747,13 @@ ${messageData.message}
 						const user = await storage.getUser(order.userId);
 						return {
 							...order,
-							customer: user ? {
-								firstName: user.firstName,
-								lastName: user.lastName,
-								email: user.email
-							} : null
+							customer: user
+								? {
+										firstName: user.firstName,
+										lastName: user.lastName,
+										email: user.email,
+								  }
+								: null,
 						};
 					} catch {
 						return order;

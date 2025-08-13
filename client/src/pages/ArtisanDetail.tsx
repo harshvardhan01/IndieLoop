@@ -3,10 +3,36 @@ import { useQuery } from "@tanstack/react-query";
 import { MapPin, Calendar, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
 import type { Artisan, Product } from "@shared/schema";
 
 export default function ArtisanDetail() {
 	const { id: artisanId } = useParams();
+	const { user, isLoading: authLoading } = useAuth();
+
+	// Check if user is admin
+	if (authLoading) {
+		return (
+			<div className="min-h-screen flex items-center justify-center">
+				<div className="animate-spin rounded-full h-32 w-32 border-b-2 border-craft-brown"></div>
+			</div>
+		);
+	}
+
+	if (!user || !user.isAdmin) {
+		return (
+			<div className="min-h-screen flex items-center justify-center">
+				<div className="text-center">
+					<h2 className="text-2xl font-bold text-gray-900 mb-2">
+						Access Denied
+					</h2>
+					<p className="text-gray-600">
+						You need admin privileges to view artisan details.
+					</p>
+				</div>
+			</div>
+		);
+	}
 
 	const { data: artisan, isLoading } = useQuery({
 		queryKey: ["/api/artisans", artisanId],
@@ -21,7 +47,8 @@ export default function ArtisanDetail() {
 		queryKey: ["/api/artisans", artisanId, "products"],
 		queryFn: async () => {
 			const response = await fetch(`/api/artisans/${artisanId}/products`);
-			if (!response.ok) throw new Error("Failed to fetch artisan products");
+			if (!response.ok)
+				throw new Error("Failed to fetch artisan products");
 			return response.json();
 		},
 	});
@@ -78,16 +105,24 @@ export default function ArtisanDetail() {
 								</Badge>
 								<div className="space-y-4">
 									<div>
-										<h3 className="font-semibold text-gray-900 mb-2">Experience</h3>
-										<p className="text-gray-600">{artisan.experience}</p>
+										<h3 className="font-semibold text-gray-900 mb-2">
+											Experience
+										</h3>
+										<p className="text-gray-600">
+											{artisan.experience}
+										</p>
 									</div>
 									<div>
-										<h3 className="font-semibold text-gray-900 mb-2">About</h3>
+										<h3 className="font-semibold text-gray-900 mb-2">
+											About
+										</h3>
 										<div
 											className="text-gray-600"
-											dangerouslySetInnerHTML={{ __html: artisan.bio }}
+											dangerouslySetInnerHTML={{
+												__html: artisan.bio,
+											}}
 										/>
-								</div>
+									</div>
 								</div>
 							</CardContent>
 						</Card>
@@ -110,17 +145,22 @@ export default function ArtisanDetail() {
 						{/* Products Section */}
 						<Card>
 							<CardHeader>
-								<CardTitle>Products by {artisan.name}</CardTitle>
+								<CardTitle>
+									Products by {artisan.name}
+								</CardTitle>
 							</CardHeader>
 							<CardContent>
 								{products.length === 0 ? (
 									<p className="text-gray-600 text-center py-8">
-										No products available from this artisan yet.
+										No products available from this artisan
+										yet.
 									</p>
 								) : (
 									<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 										{products.map((product: Product) => (
-											<div key={product.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+											<div
+												key={product.id}
+												className="border rounded-lg p-4 hover:shadow-md transition-shadow">
 												<img
 													src={product.images[0]}
 													alt={product.name}
@@ -134,12 +174,13 @@ export default function ArtisanDetail() {
 												</p>
 												<div className="flex justify-between items-center">
 													<span className="font-bold text-craft-brown">
-														₹{product.discountedPrice || product.originalPrice}
+														₹
+														{product.discountedPrice ||
+															product.originalPrice}
 													</span>
 													<a
 														href={`/product/${product.id}`}
-														className="text-craft-brown hover:underline text-sm"
-													>
+														className="text-craft-brown hover:underline text-sm">
 														View Product
 													</a>
 												</div>

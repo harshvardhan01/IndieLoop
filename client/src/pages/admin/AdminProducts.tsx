@@ -83,7 +83,9 @@ export default function AdminProducts() {
 		queryFn: async () => {
 			const response = await fetch("/api/products", {
 				headers: {
-					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
+					Authorization: `Bearer ${localStorage.getItem(
+						"sessionId"
+					)}`,
 				},
 			});
 			if (!response.ok) throw new Error("Failed to fetch products");
@@ -115,7 +117,9 @@ export default function AdminProducts() {
 		queryFn: async () => {
 			const response = await fetch("/api/artisans", {
 				headers: {
-					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
+					Authorization: `Bearer ${localStorage.getItem(
+						"sessionId"
+					)}`,
 				},
 			});
 			if (!response.ok) throw new Error("Failed to fetch artisans");
@@ -139,13 +143,17 @@ export default function AdminProducts() {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
+					Authorization: `Bearer ${localStorage.getItem(
+						"sessionId"
+					)}`,
 				},
 				body: JSON.stringify(productData),
 			});
 			if (!response.ok) {
 				const errorData = await response.json();
-				throw new Error(errorData.message || "Failed to create product");
+				throw new Error(
+					errorData.message || "Failed to create product"
+				);
 			}
 			return response.json();
 		},
@@ -180,13 +188,17 @@ export default function AdminProducts() {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
+					Authorization: `Bearer ${localStorage.getItem(
+						"sessionId"
+					)}`,
 				},
 				body: JSON.stringify(productData),
 			});
 			if (!response.ok) {
 				const errorData = await response.json();
-				throw new Error(errorData.message || "Failed to update product");
+				throw new Error(
+					errorData.message || "Failed to update product"
+				);
 			}
 			return response.json();
 		},
@@ -215,7 +227,9 @@ export default function AdminProducts() {
 			const response = await fetch(`/api/admin/products/${id}`, {
 				method: "DELETE",
 				headers: {
-					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
+					Authorization: `Bearer ${localStorage.getItem(
+						"sessionId"
+					)}`,
 				},
 			});
 			if (!response.ok) throw new Error("Failed to delete product");
@@ -239,16 +253,25 @@ export default function AdminProducts() {
 
 	// Toggle featured status mutation
 	const toggleFeaturedMutation = useMutation({
-		mutationFn: async ({ id, featured }: { id: string; featured: boolean }) => {
+		mutationFn: async ({
+			id,
+			featured,
+		}: {
+			id: string;
+			featured: boolean;
+		}) => {
 			const response = await fetch(`/api/admin/products/${id}/featured`, {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
+					Authorization: `Bearer ${localStorage.getItem(
+						"sessionId"
+					)}`,
 				},
 				body: JSON.stringify({ featured }),
 			});
-			if (!response.ok) throw new Error("Failed to update featured status");
+			if (!response.ok)
+				throw new Error("Failed to update featured status");
 			return response.json();
 		},
 		onSuccess: () => {
@@ -277,6 +300,7 @@ export default function AdminProducts() {
 			category: "",
 			material: "",
 			countryOfOrigin: "",
+			artisanId: "none",
 			images: [""],
 			dimensions: {
 				length: "",
@@ -304,7 +328,11 @@ export default function AdminProducts() {
 			category: product.category || "",
 			material: product.material || "",
 			countryOfOrigin: product.countryOfOrigin || "",
-			images: product.images && product.images.length > 0 ? product.images : [""],
+			artisanId: product.artisanId || "none",
+			images:
+				product.images && product.images.length > 0
+					? product.images
+					: [""],
 			dimensions: {
 				length: product.dimensions?.length?.toString() || "",
 				width: product.dimensions?.width?.toString() || "",
@@ -325,19 +353,29 @@ export default function AdminProducts() {
 
 		const productData = {
 			...productForm,
+			artisanId:
+				productForm.artisanId === "none" ? null : productForm.artisanId,
 			originalPrice: productForm.originalPrice,
 			discountedPrice: productForm.discountedPrice || null,
 			images: productForm.images.filter((img) => img.trim() !== ""),
-			dimensions: productForm.dimensions.length && productForm.dimensions.width ? {
-				length: parseFloat(productForm.dimensions.length) || 0,
-				width: parseFloat(productForm.dimensions.width) || 0,
-				height: parseFloat(productForm.dimensions.height) || 0,
-				unit: productForm.dimensions.unit,
-			} : null,
-			weight: productForm.weight.value ? {
-				value: parseFloat(productForm.weight.value) || 0,
-				unit: productForm.weight.unit,
-			} : null,
+			dimensions:
+				productForm.dimensions.length && productForm.dimensions.width
+					? {
+							length:
+								parseFloat(productForm.dimensions.length) || 0,
+							width:
+								parseFloat(productForm.dimensions.width) || 0,
+							height:
+								parseFloat(productForm.dimensions.height) || 0,
+							unit: productForm.dimensions.unit,
+					  }
+					: null,
+			weight: productForm.weight.value
+				? {
+						value: parseFloat(productForm.weight.value) || 0,
+						unit: productForm.weight.unit,
+				  }
+				: null,
 		};
 
 		if (editingProduct) {
@@ -373,7 +411,9 @@ export default function AdminProducts() {
 		return products.filter((product) => {
 			const matchesSearch =
 				searchQuery === "" ||
-				product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				product.name
+					.toLowerCase()
+					.includes(searchQuery.toLowerCase()) ||
 				product.asin.toLowerCase().includes(searchQuery.toLowerCase());
 			const matchesCategory =
 				categoryFilter === "all" || product.category === categoryFilter;
@@ -383,7 +423,12 @@ export default function AdminProducts() {
 				stockFilter === "all" ||
 				(stockFilter === "in-stock" && product.inStock) ||
 				(stockFilter === "out-of-stock" && !product.inStock);
-			return matchesSearch && matchesCategory && matchesMaterial && matchesStock;
+			return (
+				matchesSearch &&
+				matchesCategory &&
+				matchesMaterial &&
+				matchesStock
+			);
 		});
 	}, [products, searchQuery, categoryFilter, materialFilter, stockFilter]);
 
@@ -408,19 +453,19 @@ export default function AdminProducts() {
 						<Button
 							size="sm"
 							variant={viewMode === "grid" ? "default" : "ghost"}
-							onClick={() => setViewMode("grid")}
-						>
+							onClick={() => setViewMode("grid")}>
 							<Grid className="h-4 w-4" />
 						</Button>
 						<Button
 							size="sm"
 							variant={viewMode === "list" ? "default" : "ghost"}
-							onClick={() => setViewMode("list")}
-						>
+							onClick={() => setViewMode("list")}>
 							<List className="h-4 w-4" />
 						</Button>
 					</div>
-					<Modal open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
+					<Modal
+						open={isProductDialogOpen}
+						onOpenChange={setIsProductDialogOpen}>
 						<ModalTrigger asChild>
 							<Button onClick={resetForm}>
 								<Plus className="h-4 w-4 mr-2" />
@@ -430,7 +475,9 @@ export default function AdminProducts() {
 						<ModalContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
 							<ModalHeader>
 								<ModalTitle>
-									{editingProduct ? "Edit Product" : "Add New Product"}
+									{editingProduct
+										? "Edit Product"
+										: "Add New Product"}
 								</ModalTitle>
 							</ModalHeader>
 							<form onSubmit={handleSubmit} className="space-y-4">
@@ -466,7 +513,9 @@ export default function AdminProducts() {
 								</div>
 
 								<div className="space-y-2">
-									<Label htmlFor="description">Description</Label>
+									<Label htmlFor="description">
+										Description
+									</Label>
 									<Textarea
 										id="description"
 										value={productForm.description}
@@ -495,7 +544,9 @@ export default function AdminProducts() {
 										</SelectTrigger>
 										<SelectContent>
 											{categories.map((category) => (
-												<SelectItem key={category} value={category}>
+												<SelectItem
+													key={category}
+													value={category}>
 													{category}
 												</SelectItem>
 											))}
@@ -505,28 +556,34 @@ export default function AdminProducts() {
 
 								<div className="grid grid-cols-2 gap-4">
 									<div className="space-y-2">
-										<Label htmlFor="originalPrice">Original Price</Label>
+										<Label htmlFor="originalPrice">
+											Original Price
+										</Label>
 										<Input
 											id="originalPrice"
 											value={productForm.originalPrice}
 											onChange={(e) =>
 												setProductForm((prev) => ({
 													...prev,
-													originalPrice: e.target.value,
+													originalPrice:
+														e.target.value,
 												}))
 											}
 											required
 										/>
 									</div>
 									<div className="space-y-2">
-										<Label htmlFor="discountedPrice">Discounted Price</Label>
+										<Label htmlFor="discountedPrice">
+											Discounted Price
+										</Label>
 										<Input
 											id="discountedPrice"
 											value={productForm.discountedPrice}
 											onChange={(e) =>
 												setProductForm((prev) => ({
 													...prev,
-													discountedPrice: e.target.value,
+													discountedPrice:
+														e.target.value,
 												}))
 											}
 										/>
@@ -535,7 +592,9 @@ export default function AdminProducts() {
 
 								<div className="grid grid-cols-2 gap-4">
 									<div className="space-y-2">
-										<Label htmlFor="material">Material</Label>
+										<Label htmlFor="material">
+											Material
+										</Label>
 										<Select
 											value={productForm.material}
 											onValueChange={(value) =>
@@ -549,7 +608,9 @@ export default function AdminProducts() {
 											</SelectTrigger>
 											<SelectContent>
 												{materials.map((material) => (
-													<SelectItem key={material} value={material}>
+													<SelectItem
+														key={material}
+														value={material}>
 														{material}
 													</SelectItem>
 												))}
@@ -557,7 +618,9 @@ export default function AdminProducts() {
 										</Select>
 									</div>
 									<div className="space-y-2">
-										<Label htmlFor="countryOfOrigin">Country of Origin</Label>
+										<Label htmlFor="countryOfOrigin">
+											Country of Origin
+										</Label>
 										<Select
 											value={productForm.countryOfOrigin}
 											onValueChange={(value) =>
@@ -571,7 +634,9 @@ export default function AdminProducts() {
 											</SelectTrigger>
 											<SelectContent>
 												{countries.map((country) => (
-													<SelectItem key={country} value={country}>
+													<SelectItem
+														key={country}
+														value={country}>
 														{country}
 													</SelectItem>
 												))}
@@ -580,83 +645,161 @@ export default function AdminProducts() {
 									</div>
 								</div>
 
+								<div className="space-y-2">
+									<Label htmlFor="artisan">Artisan</Label>
+									<Select
+										value={productForm.artisanId}
+										onValueChange={(value) =>
+											setProductForm((prev) => ({
+												...prev,
+												artisanId: value,
+											}))
+										}>
+										<SelectTrigger>
+											<SelectValue placeholder="Select an artisan" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="none">
+												No Artisan
+											</SelectItem>
+											{artisans.map((artisan: any) => (
+												<SelectItem
+													key={artisan.id}
+													value={artisan.id}>
+													{artisan.name} -{" "}
+													{artisan.location} -{" "}
+													{artisan.id}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+
 								<div className="space-y-4">
 									<div className="space-y-2">
 										<Label>Dimensions</Label>
 										<div className="grid grid-cols-4 gap-2">
 											<div>
-												<Label htmlFor="length" className="text-xs">Length</Label>
+												<Label
+													htmlFor="length"
+													className="text-xs">
+													Length
+												</Label>
 												<Input
 													id="length"
 													type="number"
 													placeholder="L"
-													value={productForm.dimensions.length}
+													value={
+														productForm.dimensions
+															.length
+													}
 													onChange={(e) =>
-														setProductForm((prev) => ({
-															...prev,
-															dimensions: {
-																...prev.dimensions,
-																length: e.target.value,
-															},
-														}))
+														setProductForm(
+															(prev) => ({
+																...prev,
+																dimensions: {
+																	...prev.dimensions,
+																	length: e
+																		.target
+																		.value,
+																},
+															})
+														)
 													}
 												/>
 											</div>
 											<div>
-												<Label htmlFor="width" className="text-xs">Width</Label>
+												<Label
+													htmlFor="width"
+													className="text-xs">
+													Width
+												</Label>
 												<Input
 													id="width"
 													type="number"
 													placeholder="W"
-													value={productForm.dimensions.width}
+													value={
+														productForm.dimensions
+															.width
+													}
 													onChange={(e) =>
-														setProductForm((prev) => ({
-															...prev,
-															dimensions: {
-																...prev.dimensions,
-																width: e.target.value,
-															},
-														}))
+														setProductForm(
+															(prev) => ({
+																...prev,
+																dimensions: {
+																	...prev.dimensions,
+																	width: e
+																		.target
+																		.value,
+																},
+															})
+														)
 													}
 												/>
 											</div>
 											<div>
-												<Label htmlFor="height" className="text-xs">Height</Label>
+												<Label
+													htmlFor="height"
+													className="text-xs">
+													Height
+												</Label>
 												<Input
 													id="height"
 													type="number"
 													placeholder="H"
-													value={productForm.dimensions.height}
+													value={
+														productForm.dimensions
+															.height
+													}
 													onChange={(e) =>
-														setProductForm((prev) => ({
-															...prev,
-															dimensions: {
-																...prev.dimensions,
-																height: e.target.value,
-															},
-														}))
+														setProductForm(
+															(prev) => ({
+																...prev,
+																dimensions: {
+																	...prev.dimensions,
+																	height: e
+																		.target
+																		.value,
+																},
+															})
+														)
 													}
 												/>
 											</div>
 											<div>
-												<Label htmlFor="dimensionUnit" className="text-xs">Unit</Label>
+												<Label
+													htmlFor="dimensionUnit"
+													className="text-xs">
+													Unit
+												</Label>
 												<Select
-													value={productForm.dimensions.unit}
-													onValueChange={(value: "inch" | "cm") =>
-														setProductForm((prev) => ({
-															...prev,
-															dimensions: {
-																...prev.dimensions,
-																unit: value,
-															},
-														}))
+													value={
+														productForm.dimensions
+															.unit
+													}
+													onValueChange={(
+														value: "inch" | "cm"
+													) =>
+														setProductForm(
+															(prev) => ({
+																...prev,
+																dimensions: {
+																	...prev.dimensions,
+																	unit: value,
+																},
+															})
+														)
 													}>
 													<SelectTrigger>
 														<SelectValue />
 													</SelectTrigger>
 													<SelectContent>
-														<SelectItem value="inch">inch</SelectItem>
-														<SelectItem value="cm">cm</SelectItem>
+														<SelectItem value="inch">
+															inch
+														</SelectItem>
+														<SelectItem value="cm">
+															cm
+														</SelectItem>
 													</SelectContent>
 												</Select>
 											</div>
@@ -670,36 +813,52 @@ export default function AdminProducts() {
 												<Input
 													type="number"
 													placeholder="Weight"
-													value={productForm.weight.value}
+													value={
+														productForm.weight.value
+													}
 													onChange={(e) =>
-														setProductForm((prev) => ({
-															...prev,
-															weight: {
-																...prev.weight,
-																value: e.target.value,
-															},
-														}))
+														setProductForm(
+															(prev) => ({
+																...prev,
+																weight: {
+																	...prev.weight,
+																	value: e
+																		.target
+																		.value,
+																},
+															})
+														)
 													}
 												/>
 											</div>
 											<div>
 												<Select
-													value={productForm.weight.unit}
-													onValueChange={(value: "g" | "kg") =>
-														setProductForm((prev) => ({
-															...prev,
-															weight: {
-																...prev.weight,
-																unit: value,
-															},
-														}))
+													value={
+														productForm.weight.unit
+													}
+													onValueChange={(
+														value: "g" | "kg"
+													) =>
+														setProductForm(
+															(prev) => ({
+																...prev,
+																weight: {
+																	...prev.weight,
+																	unit: value,
+																},
+															})
+														)
 													}>
 													<SelectTrigger>
 														<SelectValue />
 													</SelectTrigger>
 													<SelectContent>
-														<SelectItem value="g">g</SelectItem>
-														<SelectItem value="kg">kg</SelectItem>
+														<SelectItem value="g">
+															g
+														</SelectItem>
+														<SelectItem value="kg">
+															kg
+														</SelectItem>
 													</SelectContent>
 												</Select>
 											</div>
@@ -710,11 +869,16 @@ export default function AdminProducts() {
 								<div className="space-y-2">
 									<Label>Images</Label>
 									{productForm.images.map((image, index) => (
-										<div key={index} className="flex space-x-2">
+										<div
+											key={index}
+											className="flex space-x-2">
 											<Input
 												value={image}
 												onChange={(e) =>
-													updateImageField(index, e.target.value)
+													updateImageField(
+														index,
+														e.target.value
+													)
 												}
 												placeholder="Image URL"
 											/>
@@ -723,8 +887,9 @@ export default function AdminProducts() {
 													type="button"
 													variant="outline"
 													size="sm"
-													onClick={() => removeImageField(index)}
-												>
+													onClick={() =>
+														removeImageField(index)
+													}>
 													<X className="h-4 w-4" />
 												</Button>
 											)}
@@ -733,8 +898,7 @@ export default function AdminProducts() {
 									<Button
 										type="button"
 										variant="outline"
-										onClick={addImageField}
-									>
+										onClick={addImageField}>
 										<Plus className="h-4 w-4 mr-2" />
 										Add Image
 									</Button>
@@ -756,13 +920,16 @@ export default function AdminProducts() {
 
 								<div className="flex space-x-2">
 									<Button type="submit" className="flex-1">
-										{editingProduct ? "Update Product" : "Create Product"}
+										{editingProduct
+											? "Update Product"
+											: "Create Product"}
 									</Button>
 									<Button
 										type="button"
 										variant="outline"
-										onClick={() => setIsProductDialogOpen(false)}
-									>
+										onClick={() =>
+											setIsProductDialogOpen(false)
+										}>
 										Cancel
 									</Button>
 								</div>
@@ -786,12 +953,16 @@ export default function AdminProducts() {
 				<div className="flex items-center gap-4">
 					<div className="flex items-center gap-2">
 						<Filter className="h-4 w-4 text-gray-500" />
-						<Select value={categoryFilter} onValueChange={setCategoryFilter}>
+						<Select
+							value={categoryFilter}
+							onValueChange={setCategoryFilter}>
 							<SelectTrigger className="w-[150px]">
 								<SelectValue placeholder="Category" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="all">All Categories</SelectItem>
+								<SelectItem value="all">
+									All Categories
+								</SelectItem>
 								{categories.map((category) => (
 									<SelectItem key={category} value={category}>
 										{category}
@@ -799,12 +970,16 @@ export default function AdminProducts() {
 								))}
 							</SelectContent>
 						</Select>
-						<Select value={materialFilter} onValueChange={setMaterialFilter}>
+						<Select
+							value={materialFilter}
+							onValueChange={setMaterialFilter}>
 							<SelectTrigger className="w-[150px]">
 								<SelectValue placeholder="Material" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="all">All Materials</SelectItem>
+								<SelectItem value="all">
+									All Materials
+								</SelectItem>
 								{materials.map((material) => (
 									<SelectItem key={material} value={material}>
 										{material}
@@ -820,7 +995,9 @@ export default function AdminProducts() {
 						<SelectContent>
 							<SelectItem value="all">All Items</SelectItem>
 							<SelectItem value="in-stock">In Stock</SelectItem>
-							<SelectItem value="out-of-stock">Out of Stock</SelectItem>
+							<SelectItem value="out-of-stock">
+								Out of Stock
+							</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>
@@ -831,20 +1008,20 @@ export default function AdminProducts() {
 					viewMode === "grid"
 						? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
 						: "grid gap-4"
-				}
-			>
+				}>
 				{filteredProducts.length === 0 ? (
 					<Card>
 						<CardContent className="p-6">
-							<p className="text-center text-gray-500">No products found</p>
+							<p className="text-center text-gray-500">
+								No products found
+							</p>
 						</CardContent>
 					</Card>
 				) : (
 					filteredProducts.map((product) => (
 						<Card
 							key={product.id}
-							className={viewMode === "list" ? "w-full" : ""}
-						>
+							className={viewMode === "list" ? "w-full" : ""}>
 							{viewMode === "grid" ? (
 								<>
 									<CardHeader>
@@ -857,6 +1034,7 @@ export default function AdminProducts() {
 												/>
 											)}
 										</div>
+
 										<div>
 											<CardTitle className="flex items-center gap-2 text-sm">
 												{product.name}
@@ -866,14 +1044,41 @@ export default function AdminProducts() {
 													</span>
 												)}
 											</CardTitle>
-											<p className="text-sm text-gray-600 mt-1">
-												₹{product.originalPrice}
-											</p>
-											<p
-												className={`text-xs ${product.inStock ? "text-green-600" : "text-red-600"}`}
-											>
-												{product.inStock ? "In Stock" : "Out of Stock"}
-											</p>
+											<div className="grid grid-cols-2 md:grid-cols-2 gap-2 mb-2">
+												<div>
+													<p className="text-sm text-gray-500">
+														ASIN
+													</p>
+													<p className="font-medium">
+														{product.asin}
+													</p>
+												</div>
+												<div className="">
+													{product.discountedPrice && (
+														<p className="text-sm text-green-600">
+															Sale: ₹
+															{
+																product.discountedPrice
+															}
+														</p>
+													)}
+													<p className="text-lg font-semibold">
+														₹{product.originalPrice}
+													</p>
+												</div>
+												<div>
+													<p
+														className={`text-sm ${
+															product.inStock
+																? "text-green-600"
+																: "text-red-600"
+														}`}>
+														{product.inStock
+															? "In Stock"
+															: "Out of Stock"}
+													</p>
+												</div>
+											</div>
 										</div>
 									</CardHeader>
 									<CardContent className="pt-0">
@@ -881,15 +1086,19 @@ export default function AdminProducts() {
 											<Button
 												size="sm"
 												variant="outline"
-												onClick={() => openEditProduct(product)}
-											>
+												onClick={() =>
+													openEditProduct(product)
+												}>
 												<Edit className="h-3 w-3" />
 											</Button>
 											<Button
 												size="sm"
 												variant="destructive"
-												onClick={() => deleteProductMutation.mutate(product.id)}
-											>
+												onClick={() =>
+													deleteProductMutation.mutate(
+														product.id
+													)
+												}>
 												<Trash2 className="h-3 w-3" />
 											</Button>
 										</div>
@@ -901,9 +1110,14 @@ export default function AdminProducts() {
 													featured: !product.featured,
 												})
 											}
-											className={`w-full ${product.featured ? "bg-yellow-600 hover:bg-yellow-700" : ""}`}
-										>
-											{product.featured ? "★ Featured" : "Feature"}
+											className={`w-full ${
+												product.featured
+													? "bg-yellow-600 hover:bg-yellow-700"
+													: ""
+											}`}>
+											{product.featured
+												? "★ Featured"
+												: "Feature"}
 										</Button>
 									</CardContent>
 								</>
@@ -920,7 +1134,9 @@ export default function AdminProducts() {
 														</span>
 													)}
 												</CardTitle>
-												<CardDescription>{product.description}</CardDescription>
+												<CardDescription>
+													{product.description}
+												</CardDescription>
 											</div>
 											<div className="text-right">
 												<p className="text-lg font-semibold">
@@ -928,7 +1144,10 @@ export default function AdminProducts() {
 												</p>
 												{product.discountedPrice && (
 													<p className="text-sm text-green-600">
-														Sale: ₹{product.discountedPrice}
+														Sale: ₹
+														{
+															product.discountedPrice
+														}
 													</p>
 												)}
 											</div>
@@ -937,57 +1156,80 @@ export default function AdminProducts() {
 									<CardContent>
 										<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
 											<div>
-												<p className="text-sm text-gray-500">ASIN</p>
-												<p className="font-medium">{product.asin}</p>
+												<p className="text-sm text-gray-500">
+													ASIN
+												</p>
+												<p className="font-medium">
+													{product.asin}
+												</p>
 											</div>
 											<div>
-												<p className="text-sm text-gray-500">Material</p>
-												<p className="font-medium">{product.material}</p>
+												<p className="text-sm text-gray-500">
+													Material
+												</p>
+												<p className="font-medium">
+													{product.material}
+												</p>
 											</div>
 											<div>
-												<p className="text-sm text-gray-500">Origin</p>
-												<p className="font-medium">{product.countryOfOrigin}</p>
+												<p className="text-sm text-gray-500">
+													Origin
+												</p>
+												<p className="font-medium">
+													{product.countryOfOrigin}
+												</p>
 											</div>
 											<div>
-												<p className="text-sm text-gray-500">Stock</p>
+												<p className="text-sm text-gray-500">
+													Stock
+												</p>
 												<p
 													className={`font-medium ${
-														product.inStock ? "text-green-600" : "text-red-600"
-													}`}
-												>
-													{product.inStock ? "In Stock" : "Out of Stock"}
+														product.inStock
+															? "text-green-600"
+															: "text-red-600"
+													}`}>
+													{product.inStock
+														? "In Stock"
+														: "Out of Stock"}
 												</p>
 											</div>
 										</div>
 										<div className="flex space-x-2">
 											<Button
 												onClick={() =>
-													toggleFeaturedMutation.mutate({
-														id: product.id,
-														featured: !product.featured,
-													})
+													toggleFeaturedMutation.mutate(
+														{
+															id: product.id,
+															featured:
+																!product.featured,
+														}
+													)
 												}
 												className={
 													product.featured
 														? "bg-yellow-600 hover:bg-yellow-700"
 														: ""
-												}
-											>
-												{product.featured ? "Remove Featured" : "Feature This"}
+												}>
+												{product.featured
+													? "Remove Featured"
+													: "Feature This"}
 											</Button>
 											<div className="flex space-x-2">
 												<Button
 													variant="outline"
-													onClick={() => openEditProduct(product)}
-												>
+													onClick={() =>
+														openEditProduct(product)
+													}>
 													<Edit className="h-4 w-4" />
 												</Button>
 												<Button
 													variant="destructive"
 													onClick={() =>
-														deleteProductMutation.mutate(product.id)
-													}
-												>
+														deleteProductMutation.mutate(
+															product.id
+														)
+													}>
 													<Trash2 className="h-4 w-4" />
 												</Button>
 											</div>

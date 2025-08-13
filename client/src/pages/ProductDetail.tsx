@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import ImageSlideshow from "@/components/ImageSlideshow";
+import AddReviewForm from "@/components/AddReviewForm";
 import { useCart } from "@/hooks/useCart";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useAuth } from "@/hooks/useAuth";
 import type { Artisan } from "@shared/schema";
 
 export default function ProductDetail() {
@@ -15,6 +17,7 @@ export default function ProductDetail() {
 	const [quantity, setQuantity] = useState(1);
 	const { addToCart, isAdding } = useCart();
 	const { formatPrice } = useCurrency();
+	const { user } = useAuth();
 
 	console.log("Product ID from params:", id);
 
@@ -82,6 +85,16 @@ export default function ProductDetail() {
 		  )
 		: 0;
 
+	// Calculate average rating and review count
+	const averageRating =
+		reviews.length > 0
+			? reviews.reduce(
+					(sum: number, review: any) => sum + review.rating,
+					0
+			  ) / reviews.length
+			: 0;
+	const reviewCount = reviews.length;
+
 	const handleAddToCart = () => {
 		addToCart({ productId: product.id, quantity });
 	};
@@ -137,12 +150,23 @@ export default function ProductDetail() {
 										{[...Array(5)].map((_, i) => (
 											<Star
 												key={i}
-												className="h-5 w-5 fill-current"
+												className={`h-5 w-5 ${
+													i <
+													Math.floor(averageRating)
+														? "fill-current"
+														: i < averageRating
+														? "fill-current opacity-50"
+														: ""
+												}`}
 											/>
 										))}
 									</div>
 									<span className="text-gray-600">
-										4.8 ({reviews.length} reviews)
+										{averageRating > 0
+											? averageRating.toFixed(1)
+											: "No rating"}
+										({reviewCount} review
+										{reviewCount !== 1 ? "s" : ""})
 									</span>
 								</div>
 							</div>
@@ -170,15 +194,21 @@ export default function ProductDetail() {
 												</div>
 											)}
 											<div className="flex-1">
-												<h4 className="font-medium text-gray-900">{artisan.name}</h4>
+												<h4 className="font-medium text-gray-900">
+													{artisan.name}
+												</h4>
 												<p className="text-sm text-gray-600 flex items-center mt-1">
 													<MapPin className="w-3 h-3 mr-1" />
 													{artisan.location}
 												</p>
-												<p className="text-sm text-craft-brown mt-1">{artisan.specialization}</p>
-												<div 
+												<p className="text-sm text-craft-brown mt-1">
+													{artisan.specialization}
+												</p>
+												<div
 													className="text-sm text-gray-600 mt-2 line-clamp-2"
-													dangerouslySetInnerHTML={{ __html: artisan.bio }}
+													dangerouslySetInnerHTML={{
+														__html: artisan.bio,
+													}}
 												/>
 											</div>
 											<Button variant="outline" size="sm">
@@ -236,10 +266,16 @@ export default function ProductDetail() {
 											</span>
 											<span className="ml-2 font-medium">
 												{[
-													product.dimensions.length && `L: ${product.dimensions.length}`,
-													product.dimensions.width && `W: ${product.dimensions.width}`,
-													product.dimensions.height && `H: ${product.dimensions.height}`
-												].filter(Boolean).join(", ")} {product.dimensions.unit}
+													product.dimensions.length &&
+														`L: ${product.dimensions.length}`,
+													product.dimensions.width &&
+														`W: ${product.dimensions.width}`,
+													product.dimensions.height &&
+														`H: ${product.dimensions.height}`,
+												]
+													.filter(Boolean)
+													.join(", ")}{" "}
+												{product.dimensions.unit}
 											</span>
 										</div>
 									)}
@@ -249,7 +285,8 @@ export default function ProductDetail() {
 												Weight:
 											</span>
 											<span className="ml-2 font-medium">
-												{product.weight.value}{product.weight.unit}
+												{product.weight.value}
+												{product.weight.unit}
 											</span>
 										</div>
 									)}
@@ -315,12 +352,23 @@ export default function ProductDetail() {
 					<h3 className="text-2xl font-display font-bold text-gray-900 mb-6">
 						Customer Reviews
 					</h3>
+
+					{/* Review Form */}
+					{user && (
+						<div className="mb-8">
+							<AddReviewForm productId={product.id} />
+						</div>
+					)}
+
+					{/* Reviews List */}
 					{reviews.length === 0 ? (
 						<Card>
 							<CardContent className="p-8 text-center">
 								<p className="text-gray-600">
-									No reviews yet. Be the first to review this
-									product!
+									No reviews yet.{" "}
+									{user
+										? "Be the first to review this product!"
+										: "Login to write a review."}
 								</p>
 							</CardContent>
 						</Card>
@@ -332,18 +380,27 @@ export default function ProductDetail() {
 										<div className="flex items-center justify-between mb-2">
 											<div className="flex items-center space-x-2">
 												<span className="font-medium">
-													Customer
+													{review.userName ||
+														"Customer"}
 												</span>
 												<div className="flex text-yellow-400 text-sm">
-													{[
-														...Array(review.rating),
-													].map((_, i) => (
-														<Star
-															key={i}
-															className="h-4 w-4 fill-current"
-														/>
-													))}
+													{[...Array(5)].map(
+														(_, i) => (
+															<Star
+																key={i}
+																className={`h-4 w-4 ${
+																	i <
+																	review.rating
+																		? "fill-current"
+																		: ""
+																}`}
+															/>
+														)
+													)}
 												</div>
+												<span className="text-sm text-gray-500">
+													({review.rating}/5)
+												</span>
 											</div>
 											<span className="text-sm text-gray-500">
 												{new Date(
@@ -352,7 +409,7 @@ export default function ProductDetail() {
 											</span>
 										</div>
 										{review.comment && (
-											<p className="text-gray-600 text-sm">
+											<p className="text-gray-600 text-sm mt-2">
 												{review.comment}
 											</p>
 										)}
