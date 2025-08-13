@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useLocation } from "wouter";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,13 +24,12 @@ import {
 	ModalHeader,
 	ModalTitle,
 } from "@/components/ui/modal";
-import { Separator } from "@/components/ui/separator";
 
 export default function Orders() {
 	const { isAuthenticated, isLoading: authLoading, user } = useAuth();
 	const { formatPrice } = useCurrency();
 	const { toast } = useToast();
-	const [, setLocation] = useLocation();
+	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -43,11 +42,11 @@ export default function Orders() {
 				variant: "destructive",
 			});
 			setTimeout(() => {
-				setLocation("/login");
+				navigate("/login");
 			}, 500);
 			return;
 		}
-	}, [isAuthenticated, authLoading, toast, setLocation]);
+	}, [isAuthenticated, authLoading, toast, navigate]);
 
 	const sessionId = localStorage.getItem("sessionId");
 
@@ -151,10 +150,10 @@ export default function Orders() {
 				variant: "destructive",
 			});
 			setTimeout(() => {
-				setLocation("/login");
+				navigate("/login");
 			}, 500);
 		}
-	}, [error, toast, setLocation]);
+	}, [error, toast, navigate]);
 
 	const getStatusIcon = (status: string) => {
 		switch (status.toLowerCase()) {
@@ -222,7 +221,7 @@ export default function Orders() {
 							Track and manage your purchases
 						</p>
 					</div>
-					<Link href="/">
+					<Link to="/">
 						<Button variant="outline" className="flex items-center">
 							<ArrowLeft className="h-4 w-4 mr-2" />
 							Continue Shopping
@@ -240,7 +239,7 @@ export default function Orders() {
 							You haven't placed any orders yet. Start exploring
 							our beautiful handcrafted products!
 						</p>
-						<Link href="/">
+						<Link to="/">
 							<Button className="bg-craft-brown hover:bg-craft-brown/90">
 								Start Shopping
 							</Button>
@@ -321,73 +320,6 @@ export default function Orders() {
 								</CardHeader>
 								<CardContent>
 									<div className="space-y-4">
-										{/* Order Items */}
-										<div>
-											<h4 className="font-semibold text-gray-900 mb-2">
-												Items ({order.items.length})
-											</h4>
-											<div className="space-y-2">
-												{order.items.map(
-													(item, index) => (
-														<div
-															key={index}
-															className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-															<div className="flex-1">
-																{item.product ? (
-																	<div>
-																		<div className="font-medium text-gray-900">
-																			{
-																				item
-																					.product
-																					.name
-																			}
-																		</div>
-																		<div className="text-sm">
-																			Quantity:{" "}
-																			<span className="font-medium">
-																				{
-																					item.quantity
-																				}
-																			</span>
-																		</div>
-																	</div>
-																) : (
-																	<div>
-																		<span className="text-sm text-gray-600">
-																			Product
-																			ID:{" "}
-																			{item.productId.slice(
-																				-8
-																			)}
-																		</span>
-																		<div className="text-sm">
-																			Quantity:{" "}
-																			<span className="font-medium">
-																				{
-																					item.quantity
-																				}
-																			</span>
-																		</div>
-																	</div>
-																)}
-															</div>
-															<div className="text-right ml-4">
-																<div className="font-medium">
-																	{formatPrice(
-																		item.price,
-																		order.currency
-																	)}
-																</div>
-																<div className="text-sm text-gray-600">
-																	each
-																</div>
-															</div>
-														</div>
-													)
-												)}
-											</div>
-										</div>
-
 										{/* Order Status Timeline */}
 										<div className="bg-gray-50 rounded-lg p-4">
 											<h4 className="font-semibold text-gray-900 mb-3">
@@ -648,7 +580,7 @@ export default function Orders() {
 													<div className="font-medium text-gray-900">
 														{item.product?.name ? (
 															<Link
-																href={`/product/${item.productId}`}
+																to={`/product/${item.productId}`}
 																className="text-craft-brown hover:text-craft-brown/80 hover:underline">
 																{
 																	item.product
@@ -746,16 +678,16 @@ export default function Orders() {
 											</span>
 										</div>
 										<p className="text-xs text-gray-500 mt-1">
-											Use this tracking number to monitor your
-											shipment progress
+											Use this tracking number to monitor
+											your shipment progress
 										</p>
 									</div>
 								) : (
 									<div className="text-sm text-gray-600">
-										{selectedOrder.status === "shipped" || selectedOrder.status === "delivered"
+										{selectedOrder.status === "shipped" ||
+										selectedOrder.status === "delivered"
 											? "Tracking details will be updated shortly"
-											: "Tracking details will be shared once the order is shipped"
-										}
+											: "Tracking details will be shared once the order is shipped"}
 									</div>
 								)}
 							</div>

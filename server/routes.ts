@@ -258,11 +258,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 				);
 
 				if (userHasReviewed) {
-					return res
-						.status(400)
-						.json({
-							message: "You have already reviewed this product",
-						});
+					return res.status(400).json({
+						message: "You have already reviewed this product",
+					});
 				}
 
 				const review = await storage.createReview(reviewData);
@@ -451,9 +449,7 @@ ${messageData.message}
 	// Address routes
 	app.get("/api/addresses", requireAuth, async (req: any, res) => {
 		try {
-			const addresses = await storage.getAddressesByUserId(
-				req.user.userId
-			);
+			const addresses = await storage.getUserAddresses(req.user.userId);
 			res.json(addresses);
 		} catch (error) {
 			console.error("Error fetching addresses:", error);

@@ -4,7 +4,7 @@ import { MapPin, Calendar, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
-import type { Artisan, Product } from "@shared/schema";
+import type { Product } from "@shared/schema";
 
 export default function ArtisanDetail() {
 	const { id: artisanId } = useParams();

@@ -12,7 +12,6 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend Architecture
 - **Framework**: React with TypeScript for type safety and better developer experience
-- **Routing**: Wouter for lightweight client-side routing without the overhead of React Router
 - **State Management**: React Query (@tanstack/react-query) for server state management and caching
 - **UI Components**: Radix UI primitives with shadcn/ui for consistent, accessible component library
 - **Styling**: Tailwind CSS with custom design tokens for craft-themed colors and typography

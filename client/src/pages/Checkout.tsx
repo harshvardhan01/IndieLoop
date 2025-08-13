@@ -1,19 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Modal, ModalContent, ModalHeader, ModalTitle, ModalTrigger } from "@/components/ui/modal";
+import {
+	Modal,
+	ModalContent,
+	ModalHeader,
+	ModalTitle,
+	ModalTrigger,
+} from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, MapPin, Plus, CreditCard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { Link } from "react-router-dom";
 
 interface Address {
 	id: string;
@@ -53,7 +58,6 @@ export default function Checkout() {
 
 	const [paymentMethod, setPaymentMethod] = useState<string>("cod");
 
-
 	// Fetch user addresses
 	const { data: addresses = [] } = useQuery<Address[]>({
 		queryKey: ["addresses"],
@@ -61,7 +65,9 @@ export default function Checkout() {
 		queryFn: async () => {
 			const response = await fetch("/api/addresses", {
 				headers: {
-					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
+					Authorization: `Bearer ${localStorage.getItem(
+						"sessionId"
+					)}`,
 				},
 			});
 			if (!response.ok) return [];
@@ -70,7 +76,7 @@ export default function Checkout() {
 	});
 
 	// Pre-fill shipping address with user data if available
-	useState(() => {
+	useEffect(() => {
 		if (user) {
 			setShippingAddress((prev) => ({
 				...prev,
@@ -78,12 +84,18 @@ export default function Checkout() {
 				lastName: user.lastName || "",
 			}));
 		}
-	});
+	}, [user]);
 
 	// Handle address selection
-	useState(() => {
-		if (selectedAddressId && selectedAddressId !== "new" && addresses.length > 0) {
-			const address = addresses.find(addr => addr.id === selectedAddressId);
+	useEffect(() => {
+		if (
+			selectedAddressId &&
+			selectedAddressId !== "new" &&
+			addresses.length > 0
+		) {
+			const address = addresses.find(
+				(addr) => addr.id === selectedAddressId
+			);
 			if (address) {
 				setShippingAddress({
 					firstName: address.firstName,
@@ -112,15 +124,16 @@ export default function Checkout() {
 				isDefault: false,
 			});
 		}
-	});
-
+	}, [selectedAddressId, addresses, user]);
 
 	const createOrderMutation = useMutation({
 		mutationFn: async () => {
 			let addressToUse;
 
 			if (selectedAddressId && selectedAddressId !== "new") {
-				addressToUse = addresses.find(addr => addr.id === selectedAddressId);
+				addressToUse = addresses.find(
+					(addr) => addr.id === selectedAddressId
+				);
 			} else {
 				// Use the manually entered address
 				addressToUse = shippingAddress;
@@ -144,7 +157,9 @@ export default function Checkout() {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
+					Authorization: `Bearer ${localStorage.getItem(
+						"sessionId"
+					)}`,
 				},
 				body: JSON.stringify({
 					items: orderItems,
@@ -173,7 +188,9 @@ export default function Checkout() {
 		onSuccess: (order) => {
 			toast({
 				title: "Order Placed Successfully!",
-				description: `Your order #${order.id.slice(-8).toUpperCase()} has been placed.`,
+				description: `Your order #${order.id
+					.slice(-8)
+					.toUpperCase()} has been placed.`,
 			});
 			// Clear cart from React Query cache
 			queryClient.setQueryData(["/api/cart"], []);
@@ -195,20 +212,24 @@ export default function Checkout() {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
+					Authorization: `Bearer ${localStorage.getItem(
+						"sessionId"
+					)}`,
 				},
 				body: JSON.stringify(addressData),
 			});
 			if (!response.ok) throw new Error("Failed to add address");
 			return response.json();
 		},
-		onSuccess: () => {
+		onSuccess: (newAddress) => {
 			queryClient.invalidateQueries({ queryKey: ["addresses"] });
 			toast({
 				title: "Success",
 				description: "Address added successfully",
 			});
 			setIsAddressDialogOpen(false);
+			// Auto-select the newly created address
+			setSelectedAddressId(newAddress.id);
 		},
 		onError: () => {
 			toast({
@@ -219,16 +240,46 @@ export default function Checkout() {
 		},
 	});
 
-	const handleAddAddress = (e: React.FormEvent) => {
+	const handleAddressSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
+		if (
+			!shippingAddress.firstName ||
+			!shippingAddress.lastName ||
+			!shippingAddress.streetAddress ||
+			!shippingAddress.city ||
+			!shippingAddress.state ||
+			!shippingAddress.zipCode ||
+			!shippingAddress.country
+		) {
+			toast({
+				title: "Error",
+				description: "Please fill in all required fields",
+				variant: "destructive",
+			});
+			return;
+		}
 		addAddressMutation.mutate(shippingAddress);
 	};
 
 	const handlePlaceOrder = () => {
-		if (!selectedAddressId && !isNewAddress) {
+		// Check if we have a selected address or if we're using a new address with all required fields
+		const hasValidAddress =
+			selectedAddressId && selectedAddressId !== "new";
+		const hasValidNewAddress =
+			isNewAddress &&
+			shippingAddress.firstName &&
+			shippingAddress.lastName &&
+			shippingAddress.streetAddress &&
+			shippingAddress.city &&
+			shippingAddress.state &&
+			shippingAddress.zipCode &&
+			shippingAddress.country;
+
+		if (!hasValidAddress && !hasValidNewAddress) {
 			toast({
 				title: "Error",
-				description: "Please select a shipping address or add a new one",
+				description:
+					"Please select a shipping address or fill in all required address fields",
 				variant: "destructive",
 			});
 			return;
@@ -242,7 +293,7 @@ export default function Checkout() {
 				<Card className="p-8">
 					<CardContent className="text-center">
 						<p className="mb-4">Please log in to checkout</p>
-						<Link href="/login">
+						<Link to="/login">
 							<Button>Login</Button>
 						</Link>
 					</CardContent>
@@ -257,7 +308,7 @@ export default function Checkout() {
 				<Card className="p-8">
 					<CardContent className="text-center">
 						<p className="mb-4">Your cart is empty</p>
-						<Link href="/">
+						<Link to="/">
 							<Button>Continue Shopping</Button>
 						</Link>
 					</CardContent>
@@ -269,16 +320,18 @@ export default function Checkout() {
 	return (
 		<div className="min-h-screen bg-gray-50 py-8">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div className="flex items-center gap-4 mb-8">
-					<Link href="/cart">
+				<div className="flex items-center justify-between mb-8">
+					<div>
+						<h1 className="text-3xl font-display font-bold text-gray-900">
+							Checkout
+						</h1>
+					</div>
+					<Link to="/cart">
 						<Button variant="outline" size="sm">
 							<ArrowLeft className="h-4 w-4 mr-2" />
 							Back to Cart
 						</Button>
 					</Link>
-					<h1 className="text-3xl font-display font-bold text-gray-900">
-						Checkout
-					</h1>
 				</div>
 
 				<div className="grid lg:grid-cols-3 gap-8">
@@ -302,16 +355,21 @@ export default function Checkout() {
 											<Card
 												key={address.id}
 												className={`cursor-pointer border-2 transition-colors ${
-													selectedAddressId === address.id
+													selectedAddressId ===
+													address.id
 														? "border-craft-brown bg-craft-brown/5"
 														: "border-gray-200 hover:border-gray-300"
 												}`}
-												onClick={() => setSelectedAddressId(address.id)}
-											>
+												onClick={() =>
+													setSelectedAddressId(
+														address.id
+													)
+												}>
 												<CardContent className="p-4">
 													<div className="flex items-center justify-between mb-2">
 														<h4 className="font-semibold">
-															{address.firstName} {address.lastName}
+															{address.firstName}{" "}
+															{address.lastName}
 														</h4>
 														{address.isDefault && (
 															<span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
@@ -320,55 +378,102 @@ export default function Checkout() {
 														)}
 													</div>
 													<div className="text-sm text-gray-600 space-y-1">
-														<p>{address.streetAddress}</p>
-														<p>{address.city}, {address.state} {address.zipCode}</p>
+														<p>
+															{
+																address.streetAddress
+															}
+														</p>
+														<p>
+															{address.city},{" "}
+															{address.state}{" "}
+															{address.zipCode}
+														</p>
 														<p>{address.country}</p>
-														{address.phone && <p>Phone: {address.phone}</p>}
+														{address.phone && (
+															<p>
+																Phone:{" "}
+																{address.phone}
+															</p>
+														)}
 													</div>
 												</CardContent>
 											</Card>
 										))}
 
 										{/* Add New Address Card */}
-										<Modal open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
+										<Modal
+											open={isAddressDialogOpen}
+											onOpenChange={
+												setIsAddressDialogOpen
+											}>
 											<ModalTrigger asChild>
 												<Card className="cursor-pointer border-2 border-dashed border-gray-300 hover:border-craft-brown hover:bg-craft-brown/5 transition-colors">
 													<CardContent className="p-4 flex flex-col items-center justify-center min-h-[140px]">
 														<Plus className="h-8 w-8 text-gray-400 mb-2" />
-														<p className="text-sm font-medium text-gray-600">Add New Address</p>
+														<p className="text-sm font-medium text-gray-600">
+															Add New Address
+														</p>
 													</CardContent>
 												</Card>
 											</ModalTrigger>
 											<ModalContent className="max-w-2xl">
 												<ModalHeader>
-													<ModalTitle>Add New Address</ModalTitle>
+													<ModalTitle>
+														Add New Address
+													</ModalTitle>
 												</ModalHeader>
-												<form onSubmit={handleAddAddress} className="space-y-4">
+												<form
+													onSubmit={
+														handleAddressSubmit
+													}
+													className="space-y-4">
 													<div className="grid grid-cols-2 gap-4">
 														<div className="space-y-2">
-															<Label htmlFor="firstName">First Name</Label>
+															<Label htmlFor="firstName">
+																First Name
+															</Label>
 															<Input
 																id="firstName"
-																value={shippingAddress.firstName}
+																value={
+																	shippingAddress.firstName
+																}
 																onChange={(e) =>
-																	setShippingAddress((prev) => ({
-																		...prev,
-																		firstName: e.target.value,
-																	}))
+																	setShippingAddress(
+																		(
+																			prev
+																		) => ({
+																			...prev,
+																			firstName:
+																				e
+																					.target
+																					.value,
+																		})
+																	)
 																}
 																required
 															/>
 														</div>
 														<div className="space-y-2">
-															<Label htmlFor="lastName">Last Name</Label>
+															<Label htmlFor="lastName">
+																Last Name
+															</Label>
 															<Input
 																id="lastName"
-																value={shippingAddress.lastName}
+																value={
+																	shippingAddress.lastName
+																}
 																onChange={(e) =>
-																	setShippingAddress((prev) => ({
-																		...prev,
-																		lastName: e.target.value,
-																	}))
+																	setShippingAddress(
+																		(
+																			prev
+																		) => ({
+																			...prev,
+																			lastName:
+																				e
+																					.target
+																					.value,
+																		})
+																	)
 																}
 																required
 															/>
@@ -376,15 +481,24 @@ export default function Checkout() {
 													</div>
 
 													<div className="space-y-2">
-														<Label htmlFor="streetAddress">Street Address</Label>
+														<Label htmlFor="streetAddress">
+															Street Address
+														</Label>
 														<Input
 															id="streetAddress"
-															value={shippingAddress.streetAddress}
+															value={
+																shippingAddress.streetAddress
+															}
 															onChange={(e) =>
-																setShippingAddress((prev) => ({
-																	...prev,
-																	streetAddress: e.target.value,
-																}))
+																setShippingAddress(
+																	(prev) => ({
+																		...prev,
+																		streetAddress:
+																			e
+																				.target
+																				.value,
+																	})
+																)
 															}
 															required
 														/>
@@ -392,29 +506,49 @@ export default function Checkout() {
 
 													<div className="grid grid-cols-2 gap-4">
 														<div className="space-y-2">
-															<Label htmlFor="city">City</Label>
+															<Label htmlFor="city">
+																City
+															</Label>
 															<Input
 																id="city"
-																value={shippingAddress.city}
+																value={
+																	shippingAddress.city
+																}
 																onChange={(e) =>
-																	setShippingAddress((prev) => ({
-																		...prev,
-																		city: e.target.value,
-																	}))
+																	setShippingAddress(
+																		(
+																			prev
+																		) => ({
+																			...prev,
+																			city: e
+																				.target
+																				.value,
+																		})
+																	)
 																}
 																required
 															/>
 														</div>
 														<div className="space-y-2">
-															<Label htmlFor="state">State</Label>
+															<Label htmlFor="state">
+																State
+															</Label>
 															<Input
 																id="state"
-																value={shippingAddress.state}
+																value={
+																	shippingAddress.state
+																}
 																onChange={(e) =>
-																	setShippingAddress((prev) => ({
-																		...prev,
-																		state: e.target.value,
-																	}))
+																	setShippingAddress(
+																		(
+																			prev
+																		) => ({
+																			...prev,
+																			state: e
+																				.target
+																				.value,
+																		})
+																	)
 																}
 																required
 															/>
@@ -423,29 +557,51 @@ export default function Checkout() {
 
 													<div className="grid grid-cols-2 gap-4">
 														<div className="space-y-2">
-															<Label htmlFor="zipCode">ZIP Code</Label>
+															<Label htmlFor="zipCode">
+																ZIP Code
+															</Label>
 															<Input
 																id="zipCode"
-																value={shippingAddress.zipCode}
+																value={
+																	shippingAddress.zipCode
+																}
 																onChange={(e) =>
-																	setShippingAddress((prev) => ({
-																		...prev,
-																		zipCode: e.target.value,
-																	}))
+																	setShippingAddress(
+																		(
+																			prev
+																		) => ({
+																			...prev,
+																			zipCode:
+																				e
+																					.target
+																					.value,
+																		})
+																	)
 																}
 																required
 															/>
 														</div>
 														<div className="space-y-2">
-															<Label htmlFor="country">Country</Label>
+															<Label htmlFor="country">
+																Country
+															</Label>
 															<Input
 																id="country"
-																value={shippingAddress.country}
+																value={
+																	shippingAddress.country
+																}
 																onChange={(e) =>
-																	setShippingAddress((prev) => ({
-																		...prev,
-																		country: e.target.value,
-																	}))
+																	setShippingAddress(
+																		(
+																			prev
+																		) => ({
+																			...prev,
+																			country:
+																				e
+																					.target
+																					.value,
+																		})
+																	)
 																}
 																required
 															/>
@@ -453,28 +609,41 @@ export default function Checkout() {
 													</div>
 
 													<div className="space-y-2">
-														<Label htmlFor="phone">Phone Number</Label>
+														<Label htmlFor="phone">
+															Phone Number
+														</Label>
 														<Input
 															id="phone"
-															value={shippingAddress.phone}
+															value={
+																shippingAddress.phone
+															}
 															onChange={(e) =>
-																setShippingAddress((prev) => ({
-																	...prev,
-																	phone: e.target.value,
-																}))
+																setShippingAddress(
+																	(prev) => ({
+																		...prev,
+																		phone: e
+																			.target
+																			.value,
+																	})
+																)
 															}
 														/>
 													</div>
 
 													<div className="flex space-x-2">
-														<Button type="submit" className="flex-1">
+														<Button
+															type="submit"
+															className="flex-1">
 															Add Address
 														</Button>
 														<Button
 															type="button"
 															variant="outline"
-															onClick={() => setIsAddressDialogOpen(false)}
-														>
+															onClick={() =>
+																setIsAddressDialogOpen(
+																	false
+																)
+															}>
 															Cancel
 														</Button>
 													</div>
@@ -498,17 +667,23 @@ export default function Checkout() {
 								<RadioGroup
 									value={paymentMethod}
 									onValueChange={setPaymentMethod}
-									className="space-y-3"
-								>
+									className="space-y-3">
 									<div className="flex items-center space-x-2">
 										<RadioGroupItem value="cod" id="cod" />
-										<Label htmlFor="cod" className="text-sm font-medium cursor-pointer">
+										<Label
+											htmlFor="cod"
+											className="text-sm font-medium cursor-pointer">
 											Cash on Delivery
 										</Label>
 									</div>
 									<div className="flex items-center space-x-2">
-										<RadioGroupItem value="online" id="online" />
-										<Label htmlFor="online" className="text-sm font-medium cursor-pointer">
+										<RadioGroupItem
+											value="online"
+											id="online"
+										/>
+										<Label
+											htmlFor="online"
+											className="text-sm font-medium cursor-pointer">
 											Online Payment (UPI/Card)
 										</Label>
 									</div>
@@ -527,14 +702,25 @@ export default function Checkout() {
 								{/* Order Items */}
 								<div className="space-y-2">
 									{cartItems.map((item: any) => (
-										<div key={item.id} className="flex justify-between items-center">
+										<div
+											key={item.id}
+											className="flex justify-between items-center">
 											<div className="flex-1">
-												<p className="text-sm font-medium">{item.product.name}</p>
-												<p className="text-xs text-gray-600">Qty: {item.quantity}</p>
+												<p className="text-sm font-medium">
+													{item.product.name}
+												</p>
+												<p className="text-xs text-gray-600">
+													Qty: {item.quantity}
+												</p>
 											</div>
 											<p className="text-sm font-medium">
 												{formatPrice(
-													(parseFloat(item.product.discountedPrice || item.product.originalPrice) * item.quantity)
+													parseFloat(
+														item.product
+															.discountedPrice ||
+															item.product
+																.originalPrice
+													) * item.quantity
 												)}
 											</p>
 										</div>
@@ -544,28 +730,43 @@ export default function Checkout() {
 								<hr />
 
 								<div className="flex justify-between items-center">
-									<span>Subtotal ({cartItems.reduce((sum: number, item: any) => sum + item.quantity, 0)} items)</span>
-									<span className="font-semibold">{formatPrice(totalAmount)}</span>
+									<span>
+										Subtotal (
+										{cartItems.reduce(
+											(sum: number, item: any) =>
+												sum + item.quantity,
+											0
+										)}{" "}
+										items)
+									</span>
+									<span className="font-semibold">
+										{formatPrice(totalAmount)}
+									</span>
 								</div>
 
 								<div className="flex justify-between items-center">
 									<span>Shipping</span>
-									<span className="text-craft-green font-semibold">Free</span>
+									<span className="text-craft-green font-semibold">
+										Free
+									</span>
 								</div>
 
 								<hr />
 
 								<div className="flex justify-between items-center text-lg font-bold">
 									<span>Total</span>
-									<span className="text-craft-brown">{formatPrice(totalAmount)}</span>
+									<span className="text-craft-brown">
+										{formatPrice(totalAmount)}
+									</span>
 								</div>
 
 								<Button
 									onClick={handlePlaceOrder}
-									disabled={createOrderMutation.isPending || (!selectedAddressId && !isNewAddress)}
-									className="w-full bg-craft-brown hover:bg-craft-brown/90"
-								>
-									{createOrderMutation.isPending ? "Placing Order..." : "Place Order"}
+									disabled={createOrderMutation.isPending}
+									className="w-full bg-craft-brown hover:bg-craft-brown/90">
+									{createOrderMutation.isPending
+										? "Placing Order..."
+										: "Place Order"}
 								</Button>
 							</CardContent>
 						</Card>
