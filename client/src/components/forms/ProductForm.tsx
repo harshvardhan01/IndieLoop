@@ -56,11 +56,11 @@ export default function ProductForm({
 			length: editingProduct?.dimensions?.length?.toString() || "",
 			width: editingProduct?.dimensions?.width?.toString() || "",
 			height: editingProduct?.dimensions?.height?.toString() || "",
-			unit: editingProduct?.dimensions?.unit || ("inch" as "inch" | "cm"),
+			unit: editingProduct?.dimensions?.unit || "inch" as "inch" | "cm",
 		},
 		weight: {
 			value: editingProduct?.weight?.value?.toString() || "",
-			unit: editingProduct?.weight?.unit || ("g" as "g" | "kg"),
+			unit: editingProduct?.weight?.unit || "g" as "g" | "kg",
 		},
 		inStock: editingProduct?.inStock ?? true,
 	});
@@ -85,13 +85,11 @@ export default function ProductForm({
 				length: editingProduct?.dimensions?.length?.toString() || "",
 				width: editingProduct?.dimensions?.width?.toString() || "",
 				height: editingProduct?.dimensions?.height?.toString() || "",
-				unit:
-					editingProduct?.dimensions?.unit ||
-					("inch" as "inch" | "cm"),
+				unit: editingProduct?.dimensions?.unit || "inch" as "inch" | "cm",
 			},
 			weight: {
 				value: editingProduct?.weight?.value?.toString() || "",
-				unit: editingProduct?.weight?.unit || ("g" as "g" | "kg"),
+				unit: editingProduct?.weight?.unit || "g" as "g" | "kg",
 			},
 			inStock: editingProduct?.inStock ?? true,
 		});
@@ -143,7 +141,7 @@ export default function ProductForm({
 	// Create product mutation
 	const createProductMutation = useMutation({
 		mutationFn: async (productData: any) => {
-			const response = await fetch("/api/admin/products", {
+			const response = await fetch("/api/products", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -189,7 +187,7 @@ export default function ProductForm({
 			id: string;
 			productData: any;
 		}) => {
-			const response = await fetch(`/api/admin/products/${id}`, {
+			const response = await fetch(`/api/products/${id}`, {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
@@ -255,15 +253,19 @@ export default function ProductForm({
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
+		const numericPrice = parseFloat(productForm.originalPrice);
+		const numericDiscountedPrice = productForm.discountedPrice && productForm.discountedPrice.trim() !== ""
+			? parseFloat(productForm.discountedPrice)
+			: undefined;
+
 		const productData = {
 			...productForm,
+			originalPrice: numericPrice.toString(),
+			discountedPrice: numericDiscountedPrice?.toString() || null,
 			artisanId:
 				productForm.artisanId === "none" ? null : productForm.artisanId,
-			originalPrice: productForm.originalPrice,
-			discountedPrice: productForm.discountedPrice || null,
-			images: productForm.images.filter((img) => img.trim() !== ""),
 			dimensions:
-				productForm.dimensions.length && productForm.dimensions.width
+				productForm.dimensions.length && productForm.dimensions.width && productForm.dimensions.height
 					? {
 							length:
 								parseFloat(productForm.dimensions.length) || 0,
@@ -274,12 +276,13 @@ export default function ProductForm({
 							unit: productForm.dimensions.unit,
 					  }
 					: null,
-			weight: productForm.weight.value
+			weight: productForm.weight.value && productForm.weight.value.trim() !== ""
 				? {
 						value: parseFloat(productForm.weight.value) || 0,
 						unit: productForm.weight.unit,
 				  }
 				: null,
+			images: productForm.images.filter((img) => img.trim() !== ""),
 		};
 
 		if (editingProduct) {
@@ -380,7 +383,9 @@ export default function ProductForm({
 							</SelectTrigger>
 							<SelectContent>
 								{categories.map((category) => (
-									<SelectItem key={category} value={category}>
+									<SelectItem
+										key={category}
+										value={category}>
 										{category}
 									</SelectItem>
 								))}
@@ -489,7 +494,9 @@ export default function ProductForm({
 								<SelectValue placeholder="Select an artisan" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="none">No Artisan</SelectItem>
+								<SelectItem value="none">
+									No Artisan
+								</SelectItem>
 								{artisans.map((artisan: any) => (
 									<SelectItem
 										key={artisan.id}
@@ -507,7 +514,9 @@ export default function ProductForm({
 							<Label>Dimensions</Label>
 							<div className="grid grid-cols-4 gap-2">
 								<div>
-									<Label htmlFor="length" className="text-xs">
+									<Label
+										htmlFor="length"
+										className="text-xs">
 										Length
 									</Label>
 									<Input
@@ -574,7 +583,9 @@ export default function ProductForm({
 									</Label>
 									<Select
 										value={productForm.dimensions.unit}
-										onValueChange={(value: "inch" | "cm") =>
+										onValueChange={(
+											value: "inch" | "cm"
+										) =>
 											setProductForm((prev) => ({
 												...prev,
 												dimensions: {
@@ -634,7 +645,9 @@ export default function ProductForm({
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="g">g</SelectItem>
+											<SelectItem value="g">
+												g
+											</SelectItem>
 											<SelectItem value="kg">
 												kg
 											</SelectItem>
@@ -661,7 +674,9 @@ export default function ProductForm({
 										type="button"
 										variant="outline"
 										size="sm"
-										onClick={() => removeImageField(index)}>
+										onClick={() =>
+											removeImageField(index)
+										}>
 										<X className="h-4 w-4" />
 									</Button>
 								)}

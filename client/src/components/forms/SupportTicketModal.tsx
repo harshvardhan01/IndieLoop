@@ -1,3 +1,4 @@
+
 import {
 	Modal,
 	ModalContent,
@@ -87,9 +88,7 @@ export default function SupportTicketModal({
 								<SelectItem value="in-progress">
 									In Progress
 								</SelectItem>
-								<SelectItem value="resolved">
-									Resolved
-								</SelectItem>
+								<SelectItem value="resolved">Resolved</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>

@@ -70,18 +70,16 @@ export default function AdminSupport() {
 				message.status === filterStatus;
 			const matchesSearch =
 				searchTerm === "" ||
-				(message.subject &&
+				(message.subject && 
 					message.subject
 						.toLowerCase()
 						.includes(searchTerm.toLowerCase())) ||
-				(message.message &&
+				(message.message && 
 					message.message
 						.toLowerCase()
 						.includes(searchTerm.toLowerCase())) ||
-				(message.email &&
-					message.email
-						.toLowerCase()
-						.includes(searchTerm.toLowerCase()));
+				(message.email && 
+					message.email.toLowerCase().includes(searchTerm.toLowerCase()));
 			return matchesStatus && matchesSearch;
 		});
 	}, [messages, filterStatus, searchTerm]);
@@ -121,7 +119,7 @@ export default function AdminSupport() {
 
 	const handleStatusChange = (ticketId: string, status: string) => {
 		updateMessageStatusMutation.mutate({ id: ticketId, status });
-		setSelectedTicket((prev) => (prev ? { ...prev, status } : null));
+		setSelectedTicket((prev) => prev ? { ...prev, status } : null);
 	};
 
 	// Only render admin content if user is an admin

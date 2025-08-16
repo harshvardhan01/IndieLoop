@@ -62,6 +62,8 @@ export default function AdminArtisans() {
 		},
 	});
 
+	
+
 	const deleteArtisanMutation = useMutation({
 		mutationFn: async (id: string) => {
 			const sessionId = localStorage.getItem("sessionId");

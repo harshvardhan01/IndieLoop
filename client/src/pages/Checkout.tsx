@@ -47,9 +47,7 @@ export default function Checkout() {
 		queryFn: async () => {
 			const response = await fetch("/api/addresses", {
 				headers: {
-					Authorization: `Bearer ${localStorage.getItem(
-						"sessionId"
-					)}`,
+					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
 				},
 			});
 			if (!response.ok) return [];
@@ -64,7 +62,7 @@ export default function Checkout() {
 			}
 
 			const addressToUse = addresses.find(
-				(addr) => addr.id === selectedAddressId
+				(addr) => addr.id === selectedAddressId,
 			);
 
 			if (!addressToUse) {
@@ -75,9 +73,7 @@ export default function Checkout() {
 				productId: item.productId,
 				quantity: item.quantity,
 				price: parseFloat(
-					item.product?.discountedPrice ||
-						item.product?.originalPrice ||
-						"0"
+					item.product?.discountedPrice || item.product?.originalPrice || "0",
 				),
 			}));
 
@@ -85,9 +81,7 @@ export default function Checkout() {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${localStorage.getItem(
-						"sessionId"
-					)}`,
+					Authorization: `Bearer ${localStorage.getItem("sessionId")}`,
 				},
 				body: JSON.stringify({
 					items: orderItems,
@@ -214,21 +208,16 @@ export default function Checkout() {
 											<Card
 												key={address.id}
 												className={`cursor-pointer border-2 transition-colors ${
-													selectedAddressId ===
-													address.id
+													selectedAddressId === address.id
 														? "border-craft-brown bg-craft-brown/5"
 														: "border-gray-200 hover:border-gray-300"
 												}`}
-												onClick={() =>
-													setSelectedAddressId(
-														address.id
-													)
-												}>
+												onClick={() => setSelectedAddressId(address.id)}
+											>
 												<CardContent className="p-4">
 													<div className="flex items-center justify-between mb-2">
 														<h4 className="font-semibold">
-															{address.firstName}{" "}
-															{address.lastName}
+															{address.firstName} {address.lastName}
 														</h4>
 														{address.isDefault && (
 															<span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
@@ -237,23 +226,12 @@ export default function Checkout() {
 														)}
 													</div>
 													<div className="text-sm text-gray-600 space-y-1">
+														<p>{address.streetAddress}</p>
 														<p>
-															{
-																address.streetAddress
-															}
-														</p>
-														<p>
-															{address.city},{" "}
-															{address.state}{" "}
-															{address.zipCode}
+															{address.city}, {address.state} {address.zipCode}
 														</p>
 														<p>{address.country}</p>
-														{address.phone && (
-															<p>
-																Phone:{" "}
-																{address.phone}
-															</p>
-														)}
+														{address.phone && <p>Phone: {address.phone}</p>}
 													</div>
 												</CardContent>
 											</Card>
@@ -262,9 +240,8 @@ export default function Checkout() {
 										{/* Add New Address Card */}
 										<Card
 											className="cursor-pointer border-2 border-dashed border-gray-300 hover:border-craft-brown hover:bg-craft-brown/5 transition-colors"
-											onClick={() =>
-												setIsAddressDialogOpen(true)
-											}>
+											onClick={() => setIsAddressDialogOpen(true)}
+										>
 											<CardContent className="p-4 flex flex-col items-center justify-center min-h-[140px]">
 												<Plus className="h-8 w-8 text-gray-400 mb-2" />
 												<p className="text-sm font-medium text-gray-600">
@@ -289,23 +266,23 @@ export default function Checkout() {
 								<RadioGroup
 									value={paymentMethod}
 									onValueChange={setPaymentMethod}
-									className="space-y-3">
+									className="space-y-3"
+								>
 									<div className="flex items-center space-x-2">
 										<RadioGroupItem value="cod" id="cod" />
 										<Label
 											htmlFor="cod"
-											className="text-sm font-medium cursor-pointer">
+											className="text-sm font-medium cursor-pointer"
+										>
 											Cash on Delivery
 										</Label>
 									</div>
 									<div className="flex items-center space-x-2">
-										<RadioGroupItem
-											value="online"
-											id="online"
-										/>
+										<RadioGroupItem value="online" id="online" />
 										<Label
 											htmlFor="online"
-											className="text-sm font-medium cursor-pointer">
+											className="text-sm font-medium cursor-pointer"
+										>
 											Online Payment (UPI/Card)
 										</Label>
 									</div>
@@ -326,7 +303,8 @@ export default function Checkout() {
 									{cartItems.map((item: any) => (
 										<div
 											key={item.id}
-											className="flex justify-between items-center">
+											className="flex justify-between items-center"
+										>
 											<div className="flex-1">
 												<p className="text-sm font-medium">
 													{item.product.name}
@@ -338,11 +316,9 @@ export default function Checkout() {
 											<p className="text-sm font-medium">
 												{formatPrice(
 													parseFloat(
-														item.product
-															.discountedPrice ||
-															item.product
-																.originalPrice
-													) * item.quantity
+														item.product.discountedPrice ||
+															item.product.originalPrice,
+													) * item.quantity,
 												)}
 											</p>
 										</div>
@@ -355,9 +331,8 @@ export default function Checkout() {
 									<span>
 										Subtotal (
 										{cartItems.reduce(
-											(sum: number, item: any) =>
-												sum + item.quantity,
-											0
+											(sum: number, item: any) => sum + item.quantity,
+											0,
 										)}{" "}
 										items)
 									</span>
@@ -368,9 +343,7 @@ export default function Checkout() {
 
 								<div className="flex justify-between items-center">
 									<span>Shipping</span>
-									<span className="text-craft-green font-semibold">
-										Free
-									</span>
+									<span className="text-craft-green font-semibold">Free</span>
 								</div>
 
 								<hr />
@@ -385,7 +358,8 @@ export default function Checkout() {
 								<Button
 									onClick={handlePlaceOrder}
 									disabled={createOrderMutation.isPending}
-									className="w-full bg-craft-brown hover:bg-craft-brown/90">
+									className="w-full bg-craft-brown hover:bg-craft-brown/90"
+								>
 									{createOrderMutation.isPending
 										? "Placing Order..."
 										: "Place Order"}

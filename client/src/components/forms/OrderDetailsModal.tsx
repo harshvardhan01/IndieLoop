@@ -1,3 +1,4 @@
+
 import { Order } from "@shared/schema";
 import {
 	Modal,
@@ -80,9 +81,7 @@ export default function OrderDetailsModal({
 								</p>
 								<p>
 									<span className="font-medium">Date:</span>{" "}
-									{new Date(
-										order.createdAt
-									).toLocaleDateString()}
+									{new Date(order.createdAt).toLocaleDateString()}
 								</p>
 								<p>
 									<span className="font-medium">Status:</span>{" "}

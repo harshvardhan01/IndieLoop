@@ -102,6 +102,8 @@ export default function AdminProducts() {
 		},
 	});
 
+	
+
 	// Delete product mutation
 	const deleteProductMutation = useMutation({
 		mutationFn: async (id: string) => {
@@ -237,14 +239,14 @@ export default function AdminProducts() {
 							<List className="h-4 w-4" />
 						</Button>
 					</div>
-					<Button
-						onClick={() => {
-							setEditingProduct(null);
-							setIsProductDialogOpen(true);
-						}}>
+					<Button onClick={() => {
+						setEditingProduct(null);
+						setIsProductDialogOpen(true);
+					}}>
 						<Plus className="h-4 w-4 mr-2" />
 						Add Product
 					</Button>
+						
 				</div>
 			</div>
 
