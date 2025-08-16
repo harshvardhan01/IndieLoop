@@ -3,15 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Modal,
-	ModalContent,
-	ModalHeader,
-	ModalTitle,
-	ModalTrigger,
-} from "@/components/ui/modal";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ArrowLeft, MapPin, Plus, CreditCard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,6 +11,8 @@ import { useCart } from "@/hooks/useCart";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import { Label } from "@/components/ui/label";
+import AddressForm from "@/components/forms/AddressForm";
 
 interface Address {
 	id: string;
@@ -42,19 +36,7 @@ export default function Checkout() {
 	const queryClient = useQueryClient();
 
 	const [selectedAddressId, setSelectedAddressId] = useState<string>("");
-	const [isNewAddress, setIsNewAddress] = useState(false);
 	const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false);
-	const [shippingAddress, setShippingAddress] = useState({
-		firstName: user?.firstName || "",
-		lastName: user?.lastName || "",
-		streetAddress: "",
-		city: "",
-		state: "",
-		zipCode: "",
-		country: "India",
-		phone: "",
-		isDefault: false,
-	});
 
 	const [paymentMethod, setPaymentMethod] = useState<string>("cod");
 
@@ -75,72 +57,18 @@ export default function Checkout() {
 		},
 	});
 
-	// Pre-fill shipping address with user data if available
-	useEffect(() => {
-		if (user) {
-			setShippingAddress((prev) => ({
-				...prev,
-				firstName: user.firstName || "",
-				lastName: user.lastName || "",
-			}));
-		}
-	}, [user]);
-
-	// Handle address selection
-	useEffect(() => {
-		if (
-			selectedAddressId &&
-			selectedAddressId !== "new" &&
-			addresses.length > 0
-		) {
-			const address = addresses.find(
-				(addr) => addr.id === selectedAddressId
-			);
-			if (address) {
-				setShippingAddress({
-					firstName: address.firstName,
-					lastName: address.lastName,
-					streetAddress: address.streetAddress,
-					city: address.city,
-					state: address.state,
-					zipCode: address.zipCode,
-					country: address.country,
-					phone: address.phone || "",
-					isDefault: address.isDefault,
-				});
-				setIsNewAddress(false);
-			}
-		} else if (selectedAddressId === "new") {
-			setIsNewAddress(true);
-			setShippingAddress({
-				firstName: user?.firstName || "",
-				lastName: user?.lastName || "",
-				streetAddress: "",
-				city: "",
-				state: "",
-				zipCode: "",
-				country: "India",
-				phone: "",
-				isDefault: false,
-			});
-		}
-	}, [selectedAddressId, addresses, user]);
-
 	const createOrderMutation = useMutation({
 		mutationFn: async () => {
-			let addressToUse;
-
-			if (selectedAddressId && selectedAddressId !== "new") {
-				addressToUse = addresses.find(
-					(addr) => addr.id === selectedAddressId
-				);
-			} else {
-				// Use the manually entered address
-				addressToUse = shippingAddress;
+			if (!selectedAddressId) {
+				throw new Error("No shipping address selected");
 			}
 
+			const addressToUse = addresses.find(
+				(addr) => addr.id === selectedAddressId
+			);
+
 			if (!addressToUse) {
-				throw new Error("No shipping address selected");
+				throw new Error("Selected address not found");
 			}
 
 			const orderItems = cartItems.map((item) => ({
@@ -206,80 +134,11 @@ export default function Checkout() {
 		},
 	});
 
-	const addAddressMutation = useMutation({
-		mutationFn: async (addressData: any) => {
-			const response = await fetch("/api/addresses", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${localStorage.getItem(
-						"sessionId"
-					)}`,
-				},
-				body: JSON.stringify(addressData),
-			});
-			if (!response.ok) throw new Error("Failed to add address");
-			return response.json();
-		},
-		onSuccess: (newAddress) => {
-			queryClient.invalidateQueries({ queryKey: ["addresses"] });
-			toast({
-				title: "Success",
-				description: "Address added successfully",
-			});
-			setIsAddressDialogOpen(false);
-			// Auto-select the newly created address
-			setSelectedAddressId(newAddress.id);
-		},
-		onError: () => {
-			toast({
-				title: "Error",
-				description: "Failed to add address",
-				variant: "destructive",
-			});
-		},
-	});
-
-	const handleAddressSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (
-			!shippingAddress.firstName ||
-			!shippingAddress.lastName ||
-			!shippingAddress.streetAddress ||
-			!shippingAddress.city ||
-			!shippingAddress.state ||
-			!shippingAddress.zipCode ||
-			!shippingAddress.country
-		) {
-			toast({
-				title: "Error",
-				description: "Please fill in all required fields",
-				variant: "destructive",
-			});
-			return;
-		}
-		addAddressMutation.mutate(shippingAddress);
-	};
-
 	const handlePlaceOrder = () => {
-		// Check if we have a selected address or if we're using a new address with all required fields
-		const hasValidAddress =
-			selectedAddressId && selectedAddressId !== "new";
-		const hasValidNewAddress =
-			isNewAddress &&
-			shippingAddress.firstName &&
-			shippingAddress.lastName &&
-			shippingAddress.streetAddress &&
-			shippingAddress.city &&
-			shippingAddress.state &&
-			shippingAddress.zipCode &&
-			shippingAddress.country;
-
-		if (!hasValidAddress && !hasValidNewAddress) {
+		if (!selectedAddressId) {
 			toast({
 				title: "Error",
-				description:
-					"Please select a shipping address or fill in all required address fields",
+				description: "Please select a shipping address",
 				variant: "destructive",
 			});
 			return;
@@ -401,255 +260,18 @@ export default function Checkout() {
 										))}
 
 										{/* Add New Address Card */}
-										<Modal
-											open={isAddressDialogOpen}
-											onOpenChange={
-												setIsAddressDialogOpen
+										<Card
+											className="cursor-pointer border-2 border-dashed border-gray-300 hover:border-craft-brown hover:bg-craft-brown/5 transition-colors"
+											onClick={() =>
+												setIsAddressDialogOpen(true)
 											}>
-											<ModalTrigger asChild>
-												<Card className="cursor-pointer border-2 border-dashed border-gray-300 hover:border-craft-brown hover:bg-craft-brown/5 transition-colors">
-													<CardContent className="p-4 flex flex-col items-center justify-center min-h-[140px]">
-														<Plus className="h-8 w-8 text-gray-400 mb-2" />
-														<p className="text-sm font-medium text-gray-600">
-															Add New Address
-														</p>
-													</CardContent>
-												</Card>
-											</ModalTrigger>
-											<ModalContent className="max-w-2xl">
-												<ModalHeader>
-													<ModalTitle>
-														Add New Address
-													</ModalTitle>
-												</ModalHeader>
-												<form
-													onSubmit={
-														handleAddressSubmit
-													}
-													className="space-y-4">
-													<div className="grid grid-cols-2 gap-4">
-														<div className="space-y-2">
-															<Label htmlFor="firstName">
-																First Name
-															</Label>
-															<Input
-																id="firstName"
-																value={
-																	shippingAddress.firstName
-																}
-																onChange={(e) =>
-																	setShippingAddress(
-																		(
-																			prev
-																		) => ({
-																			...prev,
-																			firstName:
-																				e
-																					.target
-																					.value,
-																		})
-																	)
-																}
-																required
-															/>
-														</div>
-														<div className="space-y-2">
-															<Label htmlFor="lastName">
-																Last Name
-															</Label>
-															<Input
-																id="lastName"
-																value={
-																	shippingAddress.lastName
-																}
-																onChange={(e) =>
-																	setShippingAddress(
-																		(
-																			prev
-																		) => ({
-																			...prev,
-																			lastName:
-																				e
-																					.target
-																					.value,
-																		})
-																	)
-																}
-																required
-															/>
-														</div>
-													</div>
-
-													<div className="space-y-2">
-														<Label htmlFor="streetAddress">
-															Street Address
-														</Label>
-														<Input
-															id="streetAddress"
-															value={
-																shippingAddress.streetAddress
-															}
-															onChange={(e) =>
-																setShippingAddress(
-																	(prev) => ({
-																		...prev,
-																		streetAddress:
-																			e
-																				.target
-																				.value,
-																	})
-																)
-															}
-															required
-														/>
-													</div>
-
-													<div className="grid grid-cols-2 gap-4">
-														<div className="space-y-2">
-															<Label htmlFor="city">
-																City
-															</Label>
-															<Input
-																id="city"
-																value={
-																	shippingAddress.city
-																}
-																onChange={(e) =>
-																	setShippingAddress(
-																		(
-																			prev
-																		) => ({
-																			...prev,
-																			city: e
-																				.target
-																				.value,
-																		})
-																	)
-																}
-																required
-															/>
-														</div>
-														<div className="space-y-2">
-															<Label htmlFor="state">
-																State
-															</Label>
-															<Input
-																id="state"
-																value={
-																	shippingAddress.state
-																}
-																onChange={(e) =>
-																	setShippingAddress(
-																		(
-																			prev
-																		) => ({
-																			...prev,
-																			state: e
-																				.target
-																				.value,
-																		})
-																	)
-																}
-																required
-															/>
-														</div>
-													</div>
-
-													<div className="grid grid-cols-2 gap-4">
-														<div className="space-y-2">
-															<Label htmlFor="zipCode">
-																ZIP Code
-															</Label>
-															<Input
-																id="zipCode"
-																value={
-																	shippingAddress.zipCode
-																}
-																onChange={(e) =>
-																	setShippingAddress(
-																		(
-																			prev
-																		) => ({
-																			...prev,
-																			zipCode:
-																				e
-																					.target
-																					.value,
-																		})
-																	)
-																}
-																required
-															/>
-														</div>
-														<div className="space-y-2">
-															<Label htmlFor="country">
-																Country
-															</Label>
-															<Input
-																id="country"
-																value={
-																	shippingAddress.country
-																}
-																onChange={(e) =>
-																	setShippingAddress(
-																		(
-																			prev
-																		) => ({
-																			...prev,
-																			country:
-																				e
-																					.target
-																					.value,
-																		})
-																	)
-																}
-																required
-															/>
-														</div>
-													</div>
-
-													<div className="space-y-2">
-														<Label htmlFor="phone">
-															Phone Number
-														</Label>
-														<Input
-															id="phone"
-															value={
-																shippingAddress.phone
-															}
-															onChange={(e) =>
-																setShippingAddress(
-																	(prev) => ({
-																		...prev,
-																		phone: e
-																			.target
-																			.value,
-																	})
-																)
-															}
-														/>
-													</div>
-
-													<div className="flex space-x-2">
-														<Button
-															type="submit"
-															className="flex-1">
-															Add Address
-														</Button>
-														<Button
-															type="button"
-															variant="outline"
-															onClick={() =>
-																setIsAddressDialogOpen(
-																	false
-																)
-															}>
-															Cancel
-														</Button>
-													</div>
-												</form>
-											</ModalContent>
-										</Modal>
+											<CardContent className="p-4 flex flex-col items-center justify-center min-h-[140px]">
+												<Plus className="h-8 w-8 text-gray-400 mb-2" />
+												<p className="text-sm font-medium text-gray-600">
+													Add New Address
+												</p>
+											</CardContent>
+										</Card>
 									</div>
 								</div>
 							</CardContent>
@@ -773,6 +395,16 @@ export default function Checkout() {
 					</div>
 				</div>
 			</div>
+
+			<AddressForm
+				isOpen={isAddressDialogOpen}
+				onOpenChange={setIsAddressDialogOpen}
+				editingAddress={null}
+				onSuccess={() => {
+					// Refetch addresses after adding new one
+					queryClient.invalidateQueries({ queryKey: ["addresses"] });
+				}}
+			/>
 		</div>
 	);
 }

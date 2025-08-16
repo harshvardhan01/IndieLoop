@@ -21,28 +21,10 @@ import {
 	CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-	Modal,
-	ModalContent,
-	ModalHeader,
-	ModalTitle,
-	ModalTrigger,
-} from "@/components/ui/modal";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import ArtisanForm from "@/components/forms/ArtisanForm";
 import type { Artisan } from "@shared/schema";
-
-interface ArtisanFormData {
-	name: string;
-	location: string;
-	specialization: string;
-	experience: string;
-	bio: string;
-	story: string;
-	image: string;
-}
 
 export default function AdminArtisans() {
 	const [searchQuery, setSearchQuery] = useState("");
@@ -50,15 +32,6 @@ export default function AdminArtisans() {
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editingArtisan, setEditingArtisan] = useState<Artisan | null>(null);
 	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-	const [artisanForm, setArtisanForm] = useState<ArtisanFormData>({
-		name: "",
-		location: "",
-		specialization: "",
-		experience: "",
-		bio: "",
-		story: "",
-		image: "",
-	});
 
 	const { toast } = useToast();
 	const { user } = useAuth();
@@ -86,80 +59,6 @@ export default function AdminArtisans() {
 			const response = await fetch("/api/artisans");
 			if (!response.ok) throw new Error("Failed to fetch artisans");
 			return response.json();
-		},
-	});
-
-	const createArtisanMutation = useMutation({
-		mutationFn: async (artisanData: ArtisanFormData) => {
-			const sessionId = localStorage.getItem("sessionId");
-			const response = await fetch("/api/artisans", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${sessionId}`,
-				},
-				body: JSON.stringify(artisanData),
-			});
-			if (!response.ok) {
-				const error = await response.json();
-				throw new Error(error.message || "Failed to create artisan");
-			}
-			return response.json();
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["admin", "artisans"] });
-			setIsDialogOpen(false);
-			resetForm();
-			toast({
-				title: "Success",
-				description: "Artisan created successfully",
-			});
-		},
-		onError: (error: Error) => {
-			toast({
-				title: "Error",
-				description: error.message,
-				variant: "destructive",
-			});
-		},
-	});
-
-	const updateArtisanMutation = useMutation({
-		mutationFn: async ({
-			id,
-			...artisanData
-		}: ArtisanFormData & { id: string }) => {
-			const sessionId = localStorage.getItem("sessionId");
-			const response = await fetch(`/api/artisans/${id}`, {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${sessionId}`,
-				},
-				body: JSON.stringify(artisanData),
-			});
-			if (!response.ok) {
-				const error = await response.json();
-				throw new Error(error.message || "Failed to update artisan");
-			}
-			return response.json();
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["admin", "artisans"] });
-			setIsDialogOpen(false);
-			resetForm();
-			setEditingArtisan(null);
-			toast({
-				title: "Success",
-				description: "Artisan updated successfully",
-			});
-		},
-		onError: (error: Error) => {
-			toast({
-				title: "Error",
-				description: error.message,
-				variant: "destructive",
-			});
 		},
 	});
 
@@ -193,77 +92,18 @@ export default function AdminArtisans() {
 		},
 	});
 
-	const resetForm = () => {
-		setArtisanForm({
-			name: "",
-			location: "",
-			specialization: "",
-			experience: "",
-			bio: "",
-			story: "",
-			image: "",
-		});
-	};
-
 	const handleEdit = (artisan: Artisan) => {
 		setEditingArtisan(artisan);
-		setArtisanForm({
-			name: artisan.name,
-			location: artisan.location,
-			specialization: artisan.specialization,
-			experience: artisan.experience,
-			bio: artisan.bio,
-			story: artisan.story,
-			image: artisan.image || "",
-		});
 		setIsDialogOpen(true);
 	};
 
 	const handleAdd = () => {
 		setEditingArtisan(null);
-		resetForm();
 		setIsDialogOpen(true);
 	};
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-
-		// Basic validation with proper null checks
-		if (!artisanForm.name || !artisanForm.name.trim()) {
-			toast({
-				title: "Error",
-				description: "Name is required",
-				variant: "destructive",
-			});
-			return;
-		}
-
-		if (!artisanForm.location || !artisanForm.location.trim()) {
-			toast({
-				title: "Error",
-				description: "Location is required",
-				variant: "destructive",
-			});
-			return;
-		}
-
-		if (!artisanForm.specialization || !artisanForm.specialization.trim()) {
-			toast({
-				title: "Error",
-				description: "Specialization is required",
-				variant: "destructive",
-			});
-			return;
-		}
-
-		if (editingArtisan) {
-			updateArtisanMutation.mutate({
-				id: editingArtisan.id,
-				...artisanForm,
-			});
-		} else {
-			createArtisanMutation.mutate(artisanForm);
-		}
+	const handleFormSuccess = () => {
+		setEditingArtisan(null);
 	};
 
 	// Filter artisans
@@ -319,162 +159,10 @@ export default function AdminArtisans() {
 							<List className="h-4 w-4" />
 						</Button>
 					</div>
-					<Modal open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-						<ModalTrigger asChild>
-							<Button onClick={handleAdd}>
-								<Plus className="h-4 w-4 mr-2" />
-								Add Artisan
-							</Button>
-						</ModalTrigger>
-						<ModalContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-							<ModalHeader>
-								<ModalTitle>
-									{editingArtisan
-										? "Edit Artisan"
-										: "Add New Artisan"}
-								</ModalTitle>
-							</ModalHeader>
-							<form onSubmit={handleSubmit} className="space-y-4">
-								<div className="grid grid-cols-2 gap-4">
-									<div className="space-y-2">
-										<Label htmlFor="name">Name *</Label>
-										<Input
-											id="name"
-											value={artisanForm.name}
-											onChange={(e) =>
-												setArtisanForm({
-													...artisanForm,
-													name: e.target.value,
-												})
-											}
-											placeholder="Artisan name"
-											required
-										/>
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="location">
-											Location *
-										</Label>
-										<Input
-											id="location"
-											value={artisanForm.location}
-											onChange={(e) =>
-												setArtisanForm({
-													...artisanForm,
-													location: e.target.value,
-												})
-											}
-											placeholder="City, Country"
-											required
-										/>
-									</div>
-								</div>
-								<div className="grid grid-cols-2 gap-4">
-									<div className="space-y-2">
-										<Label htmlFor="specialization">
-											Specialization *
-										</Label>
-										<Input
-											id="specialization"
-											value={artisanForm.specialization}
-											onChange={(e) =>
-												setArtisanForm({
-													...artisanForm,
-													specialization:
-														e.target.value,
-												})
-											}
-											placeholder="e.g., Pottery, Weaving"
-											required
-										/>
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="experience">
-											Experience
-										</Label>
-										<Input
-											id="experience"
-											value={artisanForm.experience}
-											onChange={(e) =>
-												setArtisanForm({
-													...artisanForm,
-													experience: e.target.value,
-												})
-											}
-											placeholder="e.g., 15 years"
-										/>
-									</div>
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="image">Image URL</Label>
-									<Input
-										id="image"
-										value={artisanForm.image}
-										onChange={(e) =>
-											setArtisanForm({
-												...artisanForm,
-												image: e.target.value,
-											})
-										}
-										placeholder="https://example.com/image.jpg"
-									/>
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="bio">Bio</Label>
-									<Textarea
-										id="bio"
-										value={artisanForm.bio}
-										onChange={(e) =>
-											setArtisanForm({
-												...artisanForm,
-												bio: e.target.value,
-											})
-										}
-										placeholder="Short biography"
-										className="min-h-20"
-									/>
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="story">Story</Label>
-									<Textarea
-										id="story"
-										value={artisanForm.story}
-										onChange={(e) =>
-											setArtisanForm({
-												...artisanForm,
-												story: e.target.value,
-											})
-										}
-										placeholder="Artisan's detailed story"
-										className="min-h-32"
-									/>
-								</div>
-								<div className="flex space-x-2">
-									<Button
-										type="submit"
-										className="flex-1"
-										disabled={
-											createArtisanMutation.isPending ||
-											updateArtisanMutation.isPending
-										}>
-										{editingArtisan
-											? "Update Artisan"
-											: "Create Artisan"}
-									</Button>
-									<Button
-										type="button"
-										variant="outline"
-										onClick={() => {
-											setIsDialogOpen(false);
-											resetForm();
-											setEditingArtisan(null);
-										}}>
-										Cancel
-									</Button>
-								</div>
-							</form>
-						</ModalContent>
-					</Modal>
+					<Button onClick={handleAdd}>
+						<Plus className="h-4 w-4 mr-2" />
+						Add Artisan
+					</Button>
 				</div>
 			</div>
 
@@ -660,6 +348,13 @@ export default function AdminArtisans() {
 					))
 				)}
 			</div>
+
+			<ArtisanForm
+				isOpen={isDialogOpen}
+				onOpenChange={setIsDialogOpen}
+				editingArtisan={editingArtisan}
+				onSuccess={handleFormSuccess}
+			/>
 		</div>
 	);
 }

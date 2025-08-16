@@ -594,7 +594,23 @@ ${messageData.message}
 
 	app.put("/api/addresses/:id", requireAuth, async (req: any, res) => {
 		try {
-			const addressData = insertAddressSchema.parse(req.body);
+			// First check if the address belongs to the user
+			const userAddresses = await storage.getUserAddresses(
+				req.user.userId
+			);
+			const addressExists = userAddresses.find(
+				(addr) => addr.id === req.params.id
+			);
+
+			if (!addressExists) {
+				return res.status(404).json({ message: "Address not found" });
+			}
+
+			const addressData = insertAddressSchema.parse({
+				...req.body,
+				userId: req.user.userId,
+			});
+
 			const address = await storage.updateAddress(
 				req.params.id,
 				addressData
@@ -604,6 +620,7 @@ ${messageData.message}
 			}
 			res.json(address);
 		} catch (error) {
+			console.error("Error updating address:", error);
 			if (error instanceof z.ZodError) {
 				return res
 					.status(400)
@@ -615,12 +632,25 @@ ${messageData.message}
 
 	app.delete("/api/addresses/:id", requireAuth, async (req: any, res) => {
 		try {
+			// First check if the address belongs to the user
+			const userAddresses = await storage.getUserAddresses(
+				req.user.userId
+			);
+			const addressExists = userAddresses.find(
+				(addr) => addr.id === req.params.id
+			);
+
+			if (!addressExists) {
+				return res.status(404).json({ message: "Address not found" });
+			}
+
 			const success = await storage.deleteAddress(req.params.id);
 			if (!success) {
 				return res.status(404).json({ message: "Address not found" });
 			}
 			res.json({ message: "Address deleted successfully" });
 		} catch (error) {
+			console.error("Error deleting address:", error);
 			res.status(500).json({ message: "Failed to delete address" });
 		}
 	});

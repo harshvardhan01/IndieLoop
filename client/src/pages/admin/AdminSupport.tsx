@@ -18,12 +18,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquare, Filter, Search } from "lucide-react";
 import { useState, useMemo } from "react";
-import {
-	Modal,
-	ModalContent,
-	ModalHeader,
-	ModalTitle,
-} from "@/components/ui/modal";
+import SupportTicketModal from "@/components/forms/SupportTicketModal";
 
 interface SupportMessage {
 	id: string;
@@ -75,16 +70,18 @@ export default function AdminSupport() {
 				message.status === filterStatus;
 			const matchesSearch =
 				searchTerm === "" ||
-				(message.subject && 
+				(message.subject &&
 					message.subject
 						.toLowerCase()
 						.includes(searchTerm.toLowerCase())) ||
-				(message.message && 
+				(message.message &&
 					message.message
 						.toLowerCase()
 						.includes(searchTerm.toLowerCase())) ||
-				(message.email && 
-					message.email.toLowerCase().includes(searchTerm.toLowerCase()));
+				(message.email &&
+					message.email
+						.toLowerCase()
+						.includes(searchTerm.toLowerCase()));
 			return matchesStatus && matchesSearch;
 		});
 	}, [messages, filterStatus, searchTerm]);
@@ -121,6 +118,11 @@ export default function AdminSupport() {
 			});
 		},
 	});
+
+	const handleStatusChange = (ticketId: string, status: string) => {
+		updateMessageStatusMutation.mutate({ id: ticketId, status });
+		setSelectedTicket((prev) => (prev ? { ...prev, status } : null));
+	};
 
 	// Only render admin content if user is an admin
 	if (!user || !user.isAdmin) {
@@ -273,76 +275,12 @@ export default function AdminSupport() {
 				)}
 			</div>
 
-			<Modal
-				open={!!selectedTicket}
-				onOpenChange={() => setSelectedTicket(null)}>
-				<ModalContent className="max-w-2xl">
-					<ModalHeader>
-						<ModalTitle>Support Ticket Details</ModalTitle>
-					</ModalHeader>
-					{selectedTicket && (
-						<div className="p-4">
-							<div className="mb-4 flex justify-between items-center">
-								<div>
-									<h2 className="text-xl font-bold">
-										{selectedTicket.subject}
-									</h2>
-									<p className="text-sm text-gray-600">
-										From: {selectedTicket.firstName}{" "}
-										{selectedTicket.lastName} (
-										{selectedTicket.email})
-									</p>
-								</div>
-								<p className="text-sm text-gray-500">
-									{new Date(
-										selectedTicket.createdAt
-									).toLocaleDateString()}
-								</p>
-							</div>
-							<div className="mb-4">
-								<h4 className="font-semibold mb-2">Message</h4>
-								<p className="text-sm text-gray-700 whitespace-pre-wrap">
-									{selectedTicket.message}
-								</p>
-							</div>
-							{selectedTicket.phone && (
-								<p className="text-sm text-gray-600 mb-4">
-									Phone: {selectedTicket.phone}
-								</p>
-							)}
-							<div className="flex items-center gap-2">
-								<label className="text-sm font-medium">
-									Status:
-								</label>
-								<Select
-									value={selectedTicket.status}
-									onValueChange={(status) => {
-										updateMessageStatusMutation.mutate({
-											id: selectedTicket.id,
-											status,
-										});
-										setSelectedTicket((prev) =>
-											prev ? { ...prev, status } : null
-										);
-									}}>
-									<SelectTrigger className="w-[150px]">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="new">New</SelectItem>
-										<SelectItem value="in-progress">
-											In Progress
-										</SelectItem>
-										<SelectItem value="resolved">
-											Resolved
-										</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-						</div>
-					)}
-				</ModalContent>
-			</Modal>
+			<SupportTicketModal
+				ticket={selectedTicket}
+				isOpen={!!selectedTicket}
+				onOpenChange={() => setSelectedTicket(null)}
+				onStatusChange={handleStatusChange}
+			/>
 		</div>
 	);
 }
